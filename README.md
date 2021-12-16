@@ -2,7 +2,7 @@
 Filename : `fullAppDisplayMod.js`
 Minimal album cover art display with beautiful blur effect background. Activating button locates in top bar. While in display mode, double click anywhere to exit. Right click anywhere to open setting menu. Now also includes lyrics if `lyrics-plus` custom app installed.
 
-![alt text](https://github.com/huhridge/full-app-display-modified/blob/255a88f4cce9d4b8942e05c76db4efce095424d7/previews/preview.gif, "Preview")
+![alt text](https://imgur.com/a/qvVTRUA, "Preview")
 
 Screenshots:
 * Album Art

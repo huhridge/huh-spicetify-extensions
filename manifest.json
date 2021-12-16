@@ -1,0 +1,7 @@
+{
+    "name": "Full App Display Modified",
+    "description": "View your music at a glance.",
+    "preview": "previews/preview.gif",
+    "main": "fullAppDisplayMod.js",
+    "readme": "README.md"
+}

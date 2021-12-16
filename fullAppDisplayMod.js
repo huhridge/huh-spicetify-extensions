@@ -382,7 +382,12 @@ body.video-full-screen.video-full-screen--hide-ui {
                 g: Math.round(((colorInt >> 8) & 0xff) / div),
                 b: Math.round((colorInt & 0xff) / div),
             };
-            return `rgb(${rgb.r},${rgb.g},${rgb.b})`
+            var isBright = false;
+            const luma = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
+            if (luma > 180){
+                isBright = true
+            }
+            return [`rgb(${rgb.r},${rgb.g},${rgb.b})`, isBright]
         }
 
         async fetchColor(uri){
@@ -501,6 +506,10 @@ body.video-full-screen.video-full-screen--hide-ui {
 
             this.deets.style.filter = 'invert(0)'
 
+            if (CONFIG.lyricsPlus){
+                this.lyrics.style.filter = 'invert(0)'
+            } 
+
             const ctx = this.back.getContext("2d");
             ctx.imageSmoothingEnabled = false;
             ctx.filter = `blur(30px) brightness(0.6)`;
@@ -538,12 +547,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                 this.lyrics.style.filter = 'invert(0)'
             } 
             if (CONFIG["optionBackground"] === 'colorText'){
-                let color  = nextColor.substring(4)
-                color = color.replace(')','')
-                console.log(color)
-                let rgb = color.split(',')
-                var luma = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-                if (luma > 180){
+                console.log(nextColor[0])
+                if (nextColor[1]){
                     this.deets.style.filter = 'invert(1)'
                     if (CONFIG.lyricsPlus){
                         this.lyrics.style.filter = 'invert(1)'
@@ -560,7 +565,7 @@ body.video-full-screen.video-full-screen--hide-ui {
     
             if (!CONFIG.enableFade) {
                 ctx.globalAlpha = 1;
-                ctx.fillStyle = nextColor;
+                ctx.fillStyle = nextColor[0];
                 ctx.fillRect(0,0, width, height);
                 return;
             }
@@ -568,10 +573,10 @@ body.video-full-screen.video-full-screen--hide-ui {
             let factor = 0.0
             const animate = () => {
                 ctx.globalAlpha = 1
-                ctx.fillStyle = prevColor;
+                ctx.fillStyle = prevColor[0];
                 ctx.fillRect(0,0, width, height);
                 ctx.globalAlpha = Math.sin(Math.PI/2*factor)
-                ctx.fillStyle = nextColor;
+                ctx.fillStyle = nextColor[0];
                 ctx.fillRect(0,0, width, height);
     
                 if (factor < 1.0) {

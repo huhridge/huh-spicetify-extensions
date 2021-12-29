@@ -16,7 +16,7 @@
 
     const CONFIG = getConfig();
     let updateVisual;
-    let nextUri, prevColor, nextColor;
+    let nextUri, prevColor, nextColor, finImage;
 
     const style = document.createElement("style");
     const styleBase = `
@@ -416,6 +416,10 @@ body.video-full-screen.video-full-screen--hide-ui {
             const meta = Spicetify.Player.data.track.metadata;
             const prevUri = nextUri
             nextUri = Spicetify.Player.data.track.uri
+            const uriFinal = nextUri.split(":")[2]
+            
+            const ximage =  await Spicetify.CosmosAsync.get('https://api.spotify.com/v1/tracks/' + uriFinal);
+            finImage = ximage.album.images[0].url;
 
             // prepare title
             let rawTitle = meta.title;
@@ -454,7 +458,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                 }
             }
 
-            if (meta.image_xlarge_url === this.currTrackImg.src) {
+//          if (meta.image_xlarge_url === this.currTrackImg.src) {
+            if (finImage === this.currTrackImg.src) {
                 this.setState({
                     title: rawTitle || "",
                     artist: artistName || "",
@@ -471,7 +476,7 @@ body.video-full-screen.video-full-screen--hide-ui {
             // TODO: Pre-load next track
             // Wait until next track image is downloaded then update UI text and images
             const previousImg = this.currTrackImg.cloneNode();
-            this.currTrackImg.src = meta.image_xlarge_url;
+            this.currTrackImg.src = finImage;
             this.currTrackImg.onload = () => {
                 const bgImage = `url("${this.currTrackImg.src}")`;
                 if (CONFIG["optionBackground"] === 'color' || CONFIG["optionBackground"] === 'colorText'){

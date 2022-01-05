@@ -376,32 +376,6 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.mousetrap = new Spicetify.Mousetrap();
         }
 
-        convertIntToRGB(colorInt, div = 1) {
-            const rgb = {
-                r: Math.round(((colorInt >> 16) & 0xff) / div),
-                g: Math.round(((colorInt >> 8) & 0xff) / div),
-                b: Math.round((colorInt & 0xff) / div),
-            };
-            var isBright = false;
-            const luma = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
-            if (luma > 180){
-                isBright = true
-            }
-            return [`rgb(${rgb.r},${rgb.g},${rgb.b})`, isBright]
-        }
-
-        async fetchColor(uri){
-            let prominent = 0
-            try {
-                const colors = await Spicetify.CosmosAsync.get(`hm://colorextractor/v1/extract-presets?uri=${uri}&format=json`);
-                prominent = colors.entries[0].color_swatches[3].color;
-            } catch {
-                prominent = 0;
-            }
-            return this.convertIntToRGB(prominent);
-    
-        }
-
         async getAlbumDate(uri) {
             const id = uri.replace("spotify:album:", "");
             const albumInfo = await Spicetify.CosmosAsync.get(`hm://album/v1/album-app/album/${id}/desktop`);
@@ -543,8 +517,17 @@ body.video-full-screen.video-full-screen--hide-ui {
         }
 
         async animateCanvasColor(prevUri, nextUri) {
-            prevColor = await this.fetchColor(prevUri);
-            nextColor = await this.fetchColor(nextUri);
+            try {
+                prevColor = await Spicetify.colorExtractor(prevUri);
+            } catch {
+                prevColor = '#000000'
+            }
+            nextColor = await Spicetify.colorExtractor(nextUri);
+
+            prevColor = prevColor["LIGHT_VIBRANT"]
+            nextColor = nextColor["LIGHT_VIBRANT"]
+
+            const luma = (parseInt(nextColor.substring(1, 3), 16) * 0.2126) +  (parseInt(nextColor.substring(3, 5), 16) * 0.7152) + (parseInt(nextColor.substring(5, 7), 16) * 0.0722)
 
             this.deets.style.filter = 'invert(0)'
 
@@ -552,8 +535,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                 this.lyrics.style.filter = 'invert(0)'
             } 
             if (CONFIG["optionBackground"] === 'colorText'){
-                console.log(nextColor[0])
-                if (nextColor[1]){
+                console.log(nextColor)
+                if (luma > 180){
                     this.deets.style.filter = 'invert(1)'
                     if (CONFIG.lyricsPlus){
                         this.lyrics.style.filter = 'invert(1)'
@@ -570,7 +553,7 @@ body.video-full-screen.video-full-screen--hide-ui {
     
             if (!CONFIG.enableFade) {
                 ctx.globalAlpha = 1;
-                ctx.fillStyle = nextColor[0];
+                ctx.fillStyle = nextColor;
                 ctx.fillRect(0,0, width, height);
                 return;
             }
@@ -578,10 +561,10 @@ body.video-full-screen.video-full-screen--hide-ui {
             let factor = 0.0
             const animate = () => {
                 ctx.globalAlpha = 1
-                ctx.fillStyle = prevColor[0];
+                ctx.fillStyle = prevColor;
                 ctx.fillRect(0,0, width, height);
                 ctx.globalAlpha = Math.sin(Math.PI/2*factor)
-                ctx.fillStyle = nextColor[0];
+                ctx.fillStyle = nextColor;
                 ctx.fillRect(0,0, width, height);
     
                 if (factor < 1.0) {

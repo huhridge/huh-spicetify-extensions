@@ -1,7 +1,16 @@
-{
-    "name": "Full App Display Modified",
-    "description": "View your music at a glance.",
-    "preview": "previews/preview.gif",
-    "main": "fullAppDisplayMod.js",
-    "readme": "README.md"
-}
+[
+    {
+        "name": "Full App Display Modified",
+        "description": "View your music at a glance.",
+        "preview": "fullAppDisplayModified/previews/preview.gif",
+        "main": "fullAppDisplayMod.js",
+        "readme": "fullAppDisplayModified/README.md"
+    },
+    {
+        "name": "Display full Album date",
+        "description": "Display the full album date instead of just year",
+        "preview": "fullAlbumDate/preview.img",
+        "main": "fullAlbumDate.js",
+        "readme": "fullAlbumDate/README.md"
+    }
+]

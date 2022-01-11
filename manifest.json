@@ -9,7 +9,7 @@
     {
         "name": "Display full Album date",
         "description": "Display the full album date instead of just year",
-        "preview": "fullAlbumDate/preview.img",
+        "preview": "fullAlbumDate/preview.jpg",
         "main": "fullAlbumDate.js",
         "readme": "fullAlbumDate/README.md"
     }

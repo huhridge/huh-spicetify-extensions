@@ -12,5 +12,12 @@
         "preview": "fullAlbumDate/preview.jpg",
         "main": "fullAlbumDate/fullAlbumDate.js",
         "readme": "fullAlbumDate/README.md"
+    },
+    {
+        "name": "GoToSong",
+        "description": "Go to currently playing song in playlist",
+        "preview": "goToSong/preview1.jpg",
+        "main": "goToSong/goToSong.js",
+        "readme": "goToSong/README.md"
     }
 ]

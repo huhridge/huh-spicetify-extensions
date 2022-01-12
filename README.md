@@ -3,6 +3,7 @@ Collection of my spicetify extensions
 
 ## Full App Display modified
 Filename : `fullAppDisplayMod.js`
+
 Minimal album cover art display with beautiful blur effect background. Activating button locates in top bar. While in display mode, double click anywhere to exit. Right click anywhere to open setting menu. Now also includes lyrics if `lyrics-plus` custom app installed.
 
 ![Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/fullAppDisplayModified/previews/preview.gif)
@@ -21,12 +22,14 @@ Settings:
 
 ## Display full Album date
 Filename : `fullAlbumDate.js`
+
 Display full album date instead of just year
 
 ![Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/fullAlbumDate/preview.jpg)
 
 ## Go to Song
 Filename : `goToSong.js`
+
 Go to the currrently playing song in a playlist **/or/** currently playing playlist.
 ### To use:
 * Currently playing playlist: Go to Profile > GoToSong > Choose "Go To Song in current Playlist" 

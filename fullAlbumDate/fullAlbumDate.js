@@ -29,7 +29,7 @@
         const uri = Platform.History.location.pathname.split('/')[2]
         dateElement = document.querySelector('.main-entityHeader-divider.main-type-mesto')
         const newDate = await getAlbumDate(uri)
-        let delayinms = await delay(300)
+        let delayinms = await delay(1000)
         setDate(newDate)
     }
 
@@ -37,7 +37,7 @@
         if (pathname.startsWith('/album/')) {
             const uri = pathname.split('/')[2]
             const newDate = await getAlbumDate(uri)
-            let delayinms = await delay(300)
+            let delayinms = await delay(1000)
             setDate(newDate)
         }
     })

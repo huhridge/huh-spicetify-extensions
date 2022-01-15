@@ -18,3 +18,7 @@ You may need to adjust your delay if it's giving an error, follow the instructio
 
 ![Adjust](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/goToSong/adjust.jpg)
 
+## More
+🌟 Like it? Gimme some love!    
+[![Github Stars badge](https://img.shields.io/github/stars/huhridge/huh-spicetify-extensions?logo=github&style=social)](https://github.com/huhridge/huh-spicetify-extensions/)
+

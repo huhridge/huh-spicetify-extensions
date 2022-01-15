@@ -1,7 +1,6 @@
 # huh-spicetify-extensions
 Collection of my spicetify extensions
 
-## More
 🌟 Like it? Gimme some love!    
 [![Github Stars badge](https://img.shields.io/github/stars/huhridge/huh-spicetify-extensions?logo=github&style=social)](https://github.com/huhridge/huh-spicetify-extensions/)
 

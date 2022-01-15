@@ -16,3 +16,6 @@ Settings:
 (May look a bit different depending on your theme)
 <img width="1440" alt="Screenshot 2021-12-16 at 14 03 04" src="https://user-images.githubusercontent.com/67046436/146336169-7aa6ecba-e475-49fa-a111-b3407268d1ce.png">
 
+## More
+🌟 Like it? Gimme some love!    
+[![Github Stars badge](https://img.shields.io/github/stars/huhridge/huh-spicetify-extensions?logo=github&style=social)](https://github.com/huhridge/huh-spicetify-extensions/)

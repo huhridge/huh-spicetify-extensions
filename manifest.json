@@ -19,5 +19,12 @@
         "preview": "goToSong/preview1.jpg",
         "main": "goToSong/goToSong.js",
         "readme": "goToSong/README.md"
+    },
+    {
+        "name": "listPlaylistsWithSong",
+        "description": "Adds context menu button to view playlists in your library that contain the selected song",
+        "preview": "listPlaylistsWithSong/preview1.jpg",
+        "main": "listPlaylistsWithSong/listPlaylistsWithSong.js",
+        "readme": "listPlaylistsWithSong/README.md"
     }
 ]

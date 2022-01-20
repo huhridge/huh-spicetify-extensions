@@ -267,13 +267,25 @@ body.video-full-screen.video-full-screen--hide-ui {
     const lyricsPlusStyleChoices = [
         `
 #fad-title {
-    font-size: 54px;
+    font-size: 4vw;
+}
+#fad-artist, #fad-album {
+    font-size: 2.5vw;
+    font-weight: var(--glue-font-weight-medium);
 }
 #fad-art {
     max-width: 210px;
     margin-left: 50px;
 }`,
-        ``,
+        `
+#fad-title {
+    font-size: 4vw;
+}
+#fad-artist, #fad-album {
+    font-size: 2.5vw;
+    font-weight: var(--glue-font-weight-medium);
+}
+        `,
     ];
     updateStyle();
 

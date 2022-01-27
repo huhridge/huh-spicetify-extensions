@@ -21,6 +21,9 @@ Adds context menu buttons to see
 
 ![Clear](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/clear.jpg)
 
+### Note: 
+After comparing, please wait for all the songs to load, and then change the mode or it **will** malfunction.
+
 ## Changing Modes:
 
 ![Mode Selection](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/modeselection.jpg)
@@ -39,8 +42,6 @@ Clicking this button, will cycle through the following modes:
 ![Second Only](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/secondonly.jpg)
 ![Second Only Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/second.jpg)
 
-### Note: 
-After comparing, please wait for all the songs to load, and then change the mode or it **will** malfunction.
 
 ## More
 🌟 Like it? Gimme some love!    

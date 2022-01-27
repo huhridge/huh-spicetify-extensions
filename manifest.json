@@ -33,5 +33,5 @@
         "preview": "playlistIntersection/preview.jpg",
         "main": "playlistIntersection/playlistIntersection.js",
         "readme": "playlistIntersection/README.md"
-    },
+    }
 ]

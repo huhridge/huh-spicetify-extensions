@@ -27,12 +27,15 @@ Adds context menu buttons to see
 
 Clicking this button, will cycle through the following modes:
 * Intersection: This mode displays the song common in both the playlists. This is the default mode and will always open.
+
 ![Intersection](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/modeinter.jpg)
 ![Intersection Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/both.jpg)
 * Songs only in Playlist 1: This displays the song present only in the first playlist.
+
 ![First Only](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/firstonly.jpg)
 ![First Only Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/first.jpg)
 * Songs only in Playlist 2: This displays the song present only in the second playlist.
+
 ![Second Only](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/secondonly.jpg)
 ![Second Only Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/second.jpg)
 

@@ -66,7 +66,7 @@ Currently, doesn't work on the currently playing song(like in the bottom bar pic
 
 ![Exception](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/listPlaylistsWithSong/note_cp.jpg)
 
-## List Playlists with Song
+## playlistIntersection
 Filename : `playlistIntersection.js`
 
 Adds context menu buttons to see 
@@ -76,5 +76,5 @@ Adds context menu buttons to see
 ![Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/both.jpg)
 
 ### To use:
-Check the full readme at: [playlistIntersection README](/playlistIntersection/README) 
+Check the full readme: [playlistIntersection readme](/playlistIntersection/README.md) 
 

@@ -26,5 +26,12 @@
         "preview": "listPlaylistsWithSong/preview1.jpg",
         "main": "listPlaylistsWithSong/listPlaylistsWithSong.js",
         "readme": "listPlaylistsWithSong/README.md"
-    }
+    },
+    {
+        "name": "playlistIntersection",
+        "description": "Adds context menu buttons to see songs in common between two playlists.",
+        "preview": "playlistIntersection/preview.jpg",
+        "main": "playlistIntersection/playlistIntersection.js",
+        "readme": "playlistIntersection/README.md"
+    },
 ]

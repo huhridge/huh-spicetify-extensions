@@ -25,11 +25,15 @@
     async function recursivePlaylistFolder(folder){ //to get every playlist no matter how deep, thanks to elijaholmos for reminding me, else i would have forgotten it.
         let playlists = [];
         for(const playlist of folder){
-            if (playlist.totalLength == 0){
-                continue
-            }
             if (playlist.type == 'playlist'){
-                if (playlist.isCollaborative || playlist.isOwnedBySelf){
+                if ((playlist.isCollaborative || playlist.isOwnedBySelf) && playlist.totalLength > 0){
+                    let image
+                    try{
+                        image = !(playlist.images[0]) ? ((await Spicetify.Platform.PlaylistAPI.getMetadata(playlist.uri)).images[0].url) :  playlist.images[0].url
+                    }
+                    catch{
+                        image = ''
+                    }
                     playlists.push({
                         uri: playlist.uri,
                         title: playlist.name,
@@ -37,7 +41,7 @@
                         isCollab: playlist.isCollaborative,
                         noOfSongs: playlist.totalLength,
                         created: playlist.addedAt.toLocaleString("default", { year: "numeric", month: "short", day:"numeric" }),
-                        image: !(playlist.images[0]) ? ((await Spicetify.Platform.PlaylistAPI.getMetadata(playlist.uri)).images[0].url) :  playlist.images[0].url
+                        image: image
                     })
                 }
             }
@@ -53,11 +57,15 @@
         let playlistsToCheck = Array();
         const userContents = await Spicetify.Platform.RootlistAPI.getContents()
         for(const playlist of userContents.items){
-            if (playlist.totalLength == 0){
-                continue
-            }
             if (playlist.type == 'playlist'){
-                if (playlist.isCollaborative || playlist.isOwnedBySelf){
+                if ((playlist.isCollaborative || playlist.isOwnedBySelf) && playlist.totalLength > 0){
+                    let image
+                    try{
+                        image = !(playlist.images[0]) ? ((await Spicetify.Platform.PlaylistAPI.getMetadata(playlist.uri)).images[0].url) :  playlist.images[0].url
+                    }
+                    catch{
+                        image = ''
+                    }
                     playlistsToCheck.push({
                         uri: playlist.uri,
                         title: playlist.name,
@@ -65,7 +73,7 @@
                         isCollab: playlist.isCollaborative,
                         noOfSongs: playlist.totalLength,
                         created: playlist.addedAt.toLocaleString("default", { year: "numeric", month: "short", day:"numeric" }),
-                        image: !(playlist.images[0]) ? ((await Spicetify.Platform.PlaylistAPI.getMetadata(playlist.uri)).images[0].url) :  playlist.images[0].url
+                        image: image
                     })
                 }
             }

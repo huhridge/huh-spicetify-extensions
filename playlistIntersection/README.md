@@ -1,4 +1,4 @@
-# List Playlists with Song
+# playlistIntersection
 Filename : `playlistIntersection.js`
 
 Adds context menu buttons to see 

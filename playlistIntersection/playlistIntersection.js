@@ -1,5 +1,5 @@
 //@ts-check
-// NAME: playlistIntersecter
+// NAME: playlistIntersection
 // AUTHOR: huhridge
 // DESCRIPTION: Adds context menu buttons to see songs in common between two playlists.
 /// <reference types="react" />
@@ -7,7 +7,8 @@
 
 (async function playlistIntersecter() {
     const { Player, Menu, LocalStorage, Platform, ReactDOM: reactDOM } = Spicetify
-    let play1, play2, commonTracks;
+    let play1, play2, name1, name2, commonTracks;
+    let renderedTracks;
 
     /** @type {React} */
     const react = Spicetify.React;
@@ -512,6 +513,43 @@
                         }
                     }
                 )
+            ),
+            react.createElement(
+                "button",
+                {
+                    className: "convertPlaylist main-topBar-button",
+                    title: "Convert to Playlist",
+                    style: {
+                        
+                        display: "inline-flex",
+                        alignSelf: "center",
+                        width: "32px",
+                        height: "32px",
+                        marginRight: "16px",
+                        borderWidth: "0px",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "var(--spice-button)"
+
+                    },
+                    onClick: () =>{
+                        convertToPlaylist()
+                    }
+                },
+                react.createElement(
+                    "svg",
+                    {
+                        role: "img",
+                        width: "16",
+                        height: "16",
+                        fill: "black",
+                        viewBox: "0 0 16 16",
+                        class: "playlistSVG",
+                        dangerouslySetInnerHTML: {
+                            __html: Spicetify.SVGIcons.playlist
+                        }
+                    }
+                )
             )
         )
     }
@@ -536,7 +574,9 @@
         }
 
         const meta1 = await Spicetify.Platform.PlaylistAPI.getMetadata(play1)
+        name1 = meta1.name
         const meta2 = await Spicetify.Platform.PlaylistAPI.getMetadata(play2)
+        name2 = meta2.name
 
         Spicetify.Platform.History.push(`/playlist/${meta1.uri.split(":")[2]}`)
         await delay(1000)
@@ -587,9 +627,6 @@
 
     async function renderIntersect(){
         let section = document.querySelector(`[data-testid="playlist-page"]`)
-        //resetting order
-        // let span = document.querySelector(".interOrder")
-        // span.innerText = "1"
         let songContainer;
         try{
             songContainer = document.querySelector(".interSongContainer")
@@ -609,6 +646,7 @@
         }
         //rendering songs
         let i = 2
+        renderedTracks = commonTracks
         for (const track of commonTracks){
             let preElement = document.createElement("div")
             songContainer.append(preElement)
@@ -653,6 +691,7 @@
         let container = document.querySelector(".interSongContainer")
         container.innerHTML = ""
 
+        renderedTracks = tracks
         let j = 2
         for (const track of tracks){
             if(!track){
@@ -666,6 +705,38 @@
             j += 1
         }
 
+    }
+
+    async function convertToPlaylist(){
+        let songUris = []
+        for (const track of renderedTracks){
+            if(!track){
+                continue
+            }
+            songUris.push(track.uri)
+        }
+        let playname;
+        if (LocalStorage.get("spicetify-intermode") == "Intersect"){
+            playname = `${name1} ∩ ${name2}`
+        }
+        else{
+            if (LocalStorage.get("spicetify-interorder") == "1"){
+                playname = `${name1} ∅ ${name2}`  
+            }
+            else{
+                playname = `${name2} ∅ ${name1}`   
+            }
+        }
+        let uri = await Spicetify.Platform.RootlistAPI.createPlaylist(playname)     
+        uri = uri.split(":")[2]
+        await delay(100)
+        while(songUris.length){
+            const b = songUris.splice(0, 100)
+            Spicetify.CosmosAsync.post('https://api.spotify.com/v1/playlists/' + uri + '/tracks', {
+                uris: b
+            })
+        }
+        Spicetify.showNotification(`Succesfully created playlist ${playname}`)
     }
 
     const clearSelection = new Spicetify.Menu.Item("Clear Selection from Intersection" ,false, (self) => {

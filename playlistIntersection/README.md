@@ -5,6 +5,8 @@ Adds context menu buttons to see
 * songs in common between two playlists
 * songs only present in one playlist
 
+and convert them to a playlist.
+
 ![Preview](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/both.jpg)
 
 ## To use:
@@ -23,6 +25,11 @@ Adds context menu buttons to see
 
 ### Note: 
 After comparing, please wait for all the songs to load, and then change the mode or it **will** malfunction.
+
+## Convert to Playlist:
+![Playlist](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/playlistIntersection/convert.jpg)
+
+Clicking this button will turn the displayed tracks into a playlist.
 
 ## Changing Modes:
 

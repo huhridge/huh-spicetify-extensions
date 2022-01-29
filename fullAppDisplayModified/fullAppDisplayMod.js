@@ -279,7 +279,7 @@ body.video-full-screen.video-full-screen--hide-ui {
 }`,
         `
 #fad-title {
-    font-size: 4vw;
+    font-size: 3.9vw;
 }
 #fad-artist, #fad-album {
     font-size: 2.5vw;
@@ -403,16 +403,25 @@ body.video-full-screen.video-full-screen--hide-ui {
             const prevUri = nextUri
             nextUri = Spicetify.Player.data.track.uri
             const uriFinal = nextUri.split(":")[2]
+            let isLocal = false
+            if (Spicetify.Player.data.context_uri == "spotify:internal:local-files"){
+                isLocal = true
+            }
             
+            if(!isLocal){
             const ximage =  await Spicetify.CosmosAsync.get('https://api.spotify.com/v1/tracks/' + uriFinal);
             finImage = ximage.album.images[0].url;
+        }
+        else{
+            finImage = meta.image_xlarge_url
+        }
 
             // prepare title
             let rawTitle = meta.title;
             if (CONFIG["trimTitle"] === 'justFeat'){
                 rawTitle = rawTitle
-                .replace(/-\s+(feat|with).*/i, "")
-                .replace(/(\(|\[)(feat|with)\.?\s+.*(\)|\])/i, "")
+                .replace(/-\s+(feat|with|ft).*/i, "")
+                .replace(/(\(|\[)(feat|with|ft)\.?\s+.*(\)|\])/i, "")
                 .trim();
             }
             else if (CONFIG["trimTitle"] === 'trimEvery') {
@@ -451,7 +460,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     artist: artistName || "",
                     album: albumText || "",
                 });
-                if (CONFIG["optionBackground"] === 'color' || CONFIG["optionBackground"] === 'colorText'){
+                if ((CONFIG["optionBackground"] === 'color' || CONFIG["optionBackground"] === 'colorText') && !isLocal){
                     this.animateCanvasColor(prevUri, prevUri)
                 } else {
                     this.animateCanvas(this.currTrackImg,this.currTrackImg);
@@ -465,7 +474,7 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.currTrackImg.src = finImage;
             this.currTrackImg.onload = () => {
                 const bgImage = `url("${this.currTrackImg.src}")`;
-                if (CONFIG["optionBackground"] === 'color' || CONFIG["optionBackground"] === 'colorText'){
+                if ((CONFIG["optionBackground"] === 'color' || CONFIG["optionBackground"] === 'colorText') && !isLocal){
                     this.animateCanvasColor(prevUri, nextUri)
                 } else {
                     this.animateCanvas(previousImg, this.currTrackImg);
@@ -532,9 +541,27 @@ body.video-full-screen.video-full-screen--hide-ui {
             try {
                 prevColor = await Spicetify.colorExtractor(prevUri);
             } catch {
-                prevColor = '#000000'
+                prevColor ={
+                    DARK_VIBRANT: "#000000",
+                    DESATURATED: "#000000",
+                    LIGHT_VIBRANT: "#000000",
+                    PROMINENT: "#000000",
+                    VIBRANT: "#000000",
+                    VIBRANT_NON_ALARMING: "#000000",
+                }
             }
-            nextColor = await Spicetify.colorExtractor(nextUri);
+            try {
+                nextColor = await Spicetify.colorExtractor(nextUri);
+            } catch {
+                                nextColor ={
+                    DARK_VIBRANT: "#000000",
+                    DESATURATED: "#000000",
+                    LIGHT_VIBRANT: "#000000",
+                    PROMINENT: "#000000",
+                    VIBRANT: "#000000",
+                    VIBRANT_NON_ALARMING: "#000000",
+                } 
+            }
 
             prevColor = prevColor["LIGHT_VIBRANT"]
             nextColor = nextColor["LIGHT_VIBRANT"]

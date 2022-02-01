@@ -400,31 +400,26 @@ body.video-full-screen.video-full-screen--hide-ui {
 
         async fetchInfo() {
             const meta = Spicetify.Player.data.track.metadata;
-            const prevUri = nextUri
-            nextUri = Spicetify.Player.data.track.uri
-            const uriFinal = nextUri.split(":")[2]
-            let isLocal = false
-            if (Spicetify.Player.data.context_uri == "spotify:internal:local-files"){
-                isLocal = true
+            const prevUri = nextUri;
+            nextUri = Spicetify.Player.data.track.uri;
+            const uriFinal = nextUri.split(":")[2];
+            let isLocal = Spicetify.URI.isLocalTrack(Spicetify.Player.data.track.uri);
+
+            if (!isLocal) {
+                const ximage = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uriFinal);
+                finImage = ximage.album.images[0].url;
+            } else {
+                finImage = meta.image_xlarge_url;
             }
-            
-            if(!isLocal){
-            const ximage =  await Spicetify.CosmosAsync.get('https://api.spotify.com/v1/tracks/' + uriFinal);
-            finImage = ximage.album.images[0].url;
-        }
-        else{
-            finImage = meta.image_xlarge_url
-        }
 
             // prepare title
             let rawTitle = meta.title;
-            if (CONFIG["trimTitle"] === 'justFeat'){
+            if (CONFIG["trimTitle"] === "justFeat") {
                 rawTitle = rawTitle
-                .replace(/-\s+(feat|with|ft).*/i, "")
-                .replace(/(\(|\[)(feat|with|ft)\.?\s+.*(\)|\])/i, "")
-                .trim();
-            }
-            else if (CONFIG["trimTitle"] === 'trimEvery') {
+                    .replace(/-\s+(feat|with|ft).*/i, "")
+                    .replace(/(\(|\[)(feat|with|ft)\.?\s+.*(\)|\])/i, "")
+                    .trim();
+            } else if (CONFIG["trimTitle"] === "trimEvery") {
                 rawTitle = rawTitle
                     .replace(/\(.+?\)/g, "")
                     .replace(/\[.+?\]/g, "")
@@ -453,17 +448,17 @@ body.video-full-screen.video-full-screen--hide-ui {
                 }
             }
 
-//          if (meta.image_xlarge_url === this.currTrackImg.src) {
+            //          if (meta.image_xlarge_url === this.currTrackImg.src) {
             if (finImage === this.currTrackImg.src) {
                 this.setState({
                     title: rawTitle || "",
                     artist: artistName || "",
                     album: albumText || "",
                 });
-                if ((CONFIG["optionBackground"] === 'color' || CONFIG["optionBackground"] === 'colorText') && !isLocal){
-                    this.animateCanvasColor(prevUri, prevUri)
+                if ((CONFIG["optionBackground"] === "color" || CONFIG["optionBackground"] === "colorText") && !isLocal) {
+                    this.animateCanvasColor(prevUri, prevUri);
                 } else {
-                    this.animateCanvas(this.currTrackImg,this.currTrackImg);
+                    this.animateCanvas(this.currTrackImg, this.currTrackImg);
                 }
                 return;
             }
@@ -474,16 +469,16 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.currTrackImg.src = finImage;
             this.currTrackImg.onload = () => {
                 const bgImage = `url("${this.currTrackImg.src}")`;
-                if ((CONFIG["optionBackground"] === 'color' || CONFIG["optionBackground"] === 'colorText') && !isLocal){
-                    this.animateCanvasColor(prevUri, nextUri)
+                if ((CONFIG["optionBackground"] === "color" || CONFIG["optionBackground"] === "colorText") && !isLocal) {
+                    this.animateCanvasColor(prevUri, nextUri);
                 } else {
                     this.animateCanvas(previousImg, this.currTrackImg);
                 }
-                if (CONFIG.enableFade){
-                    this.deets.style.animation = '';
+                if (CONFIG.enableFade) {
+                    this.deets.style.animation = "";
                     void this.deets.offsetWidth;
-                    this.deets.style.animation = 'textchange 1s forwards'
-                } 
+                    this.deets.style.animation = "textchange 1s forwards";
+                }
                 this.setState({
                     title: rawTitle || "",
                     artist: artistName || "",
@@ -504,11 +499,11 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.back.height = height;
             const dim = width > height ? width : height;
 
-            this.deets.style.filter = 'invert(0)'
+            this.deets.style.filter = "invert(0)";
 
-            if (CONFIG.lyricsPlus){
-                this.lyrics.style.filter = 'invert(0)'
-            } 
+            if (CONFIG.lyricsPlus) {
+                this.lyrics.style.filter = "invert(0)";
+            }
 
             const ctx = this.back.getContext("2d");
             ctx.imageSmoothingEnabled = false;
@@ -541,71 +536,73 @@ body.video-full-screen.video-full-screen--hide-ui {
             try {
                 prevColor = await Spicetify.colorExtractor(prevUri);
             } catch {
-                prevColor ={
+                prevColor = {
                     DARK_VIBRANT: "#000000",
                     DESATURATED: "#000000",
                     LIGHT_VIBRANT: "#000000",
                     PROMINENT: "#000000",
                     VIBRANT: "#000000",
                     VIBRANT_NON_ALARMING: "#000000",
-                }
+                };
             }
             try {
                 nextColor = await Spicetify.colorExtractor(nextUri);
             } catch {
-                                nextColor ={
+                nextColor = {
                     DARK_VIBRANT: "#000000",
                     DESATURATED: "#000000",
                     LIGHT_VIBRANT: "#000000",
                     PROMINENT: "#000000",
                     VIBRANT: "#000000",
                     VIBRANT_NON_ALARMING: "#000000",
-                } 
+                };
             }
 
-            prevColor = prevColor["LIGHT_VIBRANT"]
-            nextColor = nextColor["LIGHT_VIBRANT"]
+            prevColor = prevColor["LIGHT_VIBRANT"];
+            nextColor = nextColor["LIGHT_VIBRANT"];
 
-            const luma = (parseInt(nextColor.substring(1, 3), 16) * 0.2126) +  (parseInt(nextColor.substring(3, 5), 16) * 0.7152) + (parseInt(nextColor.substring(5, 7), 16) * 0.0722)
+            const luma =
+                parseInt(nextColor.substring(1, 3), 16) * 0.2126 +
+                parseInt(nextColor.substring(3, 5), 16) * 0.7152 +
+                parseInt(nextColor.substring(5, 7), 16) * 0.0722;
 
-            this.deets.style.filter = 'invert(0)'
+            this.deets.style.filter = "invert(0)";
 
-            if (CONFIG.lyricsPlus){
-                this.lyrics.style.filter = 'invert(0)'
-            } 
-            if (CONFIG["optionBackground"] === 'colorText'){
-                console.log(nextColor)
-                if (luma > 180){
-                    this.deets.style.filter = 'invert(1)'
-                    if (CONFIG.lyricsPlus){
-                        this.lyrics.style.filter = 'invert(1)'
+            if (CONFIG.lyricsPlus) {
+                this.lyrics.style.filter = "invert(0)";
+            }
+            if (CONFIG["optionBackground"] === "colorText") {
+                console.log(nextColor);
+                if (luma > 180) {
+                    this.deets.style.filter = "invert(1)";
+                    if (CONFIG.lyricsPlus) {
+                        this.lyrics.style.filter = "invert(1)";
                     }
-    
                 }
             }
-            const { innerWidth: width, innerHeight: height } = window
-            this.back.width = width
-            this.back.height = height
-    
-            const ctx = this.back.getContext('2d')
-            ctx.imageSmoothingEnabled = false
-    
+            const { innerWidth: width, innerHeight: height } = window;
+            this.back.width = width;
+            this.back.height = height;
+
+            const ctx = this.back.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+
             if (!CONFIG.enableFade) {
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = nextColor;
-                ctx.fillRect(0,0, width, height);
+                ctx.fillRect(0, 0, width, height);
                 return;
             }
-    
-            let factor = 0.0
+
+            let factor = 0.0;
             const animate = () => {
-                ctx.globalAlpha = 1
+                ctx.globalAlpha = 1;
                 ctx.fillStyle = prevColor;
-                ctx.fillRect(0,0, width, height);
-                ctx.globalAlpha = Math.sin(Math.PI/2*factor)
+                ctx.fillRect(0, 0, width, height);
+                ctx.globalAlpha = Math.sin((Math.PI / 2) * factor);
                 ctx.fillStyle = nextColor;
-                ctx.fillRect(0,0, width, height);
-    
+                ctx.fillRect(0, 0, width, height);
+
                 if (factor < 1.0) {
                     factor += 0.016;
                     requestAnimationFrame(animate);
@@ -636,19 +633,19 @@ body.video-full-screen.video-full-screen--hide-ui {
             };
 
             const scaleLimit = { min: 0.1, max: 4, step: 0.05 };
-             this.onScaleChange = (event) => {
-                 if (!event.ctrlKey) return;
-                 let dir = event.deltaY < 0 ? 1 : -1;
-                 let temp = (CONFIG["scale"] || 1) + dir * scaleLimit.step;
-                 if (temp < scaleLimit.min) {
-                     temp = scaleLimit.min;
-                 } else if (temp > scaleLimit.max) {
-                     temp = scaleLimit.max;
-                 }
-                 CONFIG["scale"] = temp;
-                 saveConfig();
-                 updateVisual();
-             }; 
+            this.onScaleChange = (event) => {
+                if (!event.ctrlKey) return;
+                let dir = event.deltaY < 0 ? 1 : -1;
+                let temp = (CONFIG["scale"] || 1) + dir * scaleLimit.step;
+                if (temp < scaleLimit.min) {
+                    temp = scaleLimit.min;
+                } else if (temp > scaleLimit.max) {
+                    temp = scaleLimit.max;
+                }
+                CONFIG["scale"] = temp;
+                saveConfig();
+                updateVisual();
+            };
 
             Spicetify.Platform.PlayerAPI._events.addListener("queue_update", this.onQueueChange);
             this.mousetrap.bind("esc", deactivate);
@@ -679,17 +676,17 @@ body.video-full-screen.video-full-screen--hide-ui {
                     "div",
                     { id: "fad-body" },
                     react.createElement(
-                        "div", 
-                    { 
-                        id: "fad-foreground",
-                        style: {
-                            "--fad-scale": CONFIG["scale"] || 1,
+                        "div",
+                        {
+                            id: "fad-foreground",
+                            style: {
+                                "--fad-scale": CONFIG["scale"] || 1,
+                            },
+                            ref: (el) => {
+                                if (!el) return;
+                                el.onmousewheel = this.onScaleChange;
+                            },
                         },
-                        ref: (el) => {
-                            if (!el) return;
-                            el.onmousewheel = this.onScaleChange;
-                        }
-                    },
                         react.createElement(
                             "div",
                             { id: "fad-art" },
@@ -707,9 +704,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                         ),
                         react.createElement(
                             "div",
-                            { id: "fad-details",
-                                ref: (el) => (this.deets = el),
-                            },
+                            { id: "fad-details", ref: (el) => (this.deets = el) },
                             react.createElement("div", { id: "fad-title" }, this.state.title),
                             react.createElement(SubInfo, {
                                 id: "fad-artist",
@@ -733,9 +728,9 @@ body.video-full-screen.video-full-screen--hide-ui {
                             )
                         )
                     ),
-                    CONFIG.lyricsPlus && 
-                        react.createElement("div", { 
-                            id: "fad-lyrics-plus-container", 
+                    CONFIG.lyricsPlus &&
+                        react.createElement("div", {
+                            id: "fad-lyrics-plus-container",
                             style: {
                                 "--lyrics-color-active": "#ffffff",
                                 "--lyrics-color-inactive": "#ffffff50",
@@ -795,8 +790,8 @@ body.video-full-screen.video-full-screen--hide-ui {
     }
 
     function updateStyle() {
-        style.innerHTML = 
-        styleBase +
+        style.innerHTML =
+            styleBase +
             styleChoices[CONFIG.vertical ? 1 : 0] +
             (CONFIG.lyricsPlus ? lyricsPlusBase + lyricsPlusStyleChoices[CONFIG.vertical ? 1 : 0] : "");
     }
@@ -860,7 +855,7 @@ body.video-full-screen.video-full-screen--hide-ui {
         return react.createElement(
             "div",
             { className: "setting-row" },
-            react.createElement("label", {className: "col description"}, name),
+            react.createElement("label", { className: "col description" }, name),
             react.createElement(
                 "div",
                 { className: "col action" },
@@ -940,12 +935,12 @@ select {
             null,
             style,
             react.createElement(ConfigItem, {
-                name: "Enable Lyrics Plus integration", 
-                field: "lyricsPlus", 
+                name: "Enable Lyrics Plus integration",
+                field: "lyricsPlus",
                 func: () => {
                     updateVisual();
                     requestLyricsPlus();
-                } 
+                },
             }),
             react.createElement(ConfigSelection, {
                 name: "Background",
@@ -953,21 +948,22 @@ select {
                 options: {
                     albumart: "Album Art",
                     color: "Colorful background",
-                    colorText: "Colorful background(with dynamic text)",  
+                    colorText: "Colorful background(with dynamic text)",
                 },
-                func: updateVisual
+                func: updateVisual,
             }),
             react.createElement(ConfigItem, { name: "Enable progress bar", field: "enableProgress", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Enable controls", field: "enableControl", func: updateVisual }),
             react.createElement(ConfigSelection, {
                 name: "Trim title",
-                field: "trimTitle", 
+                field: "trimTitle",
                 options: {
                     dontTrim: "Don't trim title",
-                    justFeat: 'Trim just feat. and with ',
-                    trimEvery: 'Trim Everything'
+                    justFeat: "Trim just feat. and with ",
+                    trimEvery: "Trim Everything",
                 },
-                func: updateVisual }),
+                func: updateVisual,
+            }),
             react.createElement(ConfigItem, { name: "Show album", field: "showAlbum", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Show all artists", field: "showAllArtists", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Show icons", field: "icons", func: updateVisual }),

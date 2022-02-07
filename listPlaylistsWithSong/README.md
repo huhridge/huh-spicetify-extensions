@@ -13,9 +13,9 @@ Right Click on selected song, and click "List playlists with this Song".
 
 
 ### Note:
-Currently, doesn't work on the currently playing song(like in the bottom bar pictured below), finding a workaround.
+~~Currently, doesn't work on the currently playing song(like in the bottom bar), finding a workaround.~~
+Now it shows up, fixed by your truly!
 
-![Exception](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/listPlaylistsWithSong/note_cp.jpg)
 
 ## More
 🌟 Like it? Gimme some love!    

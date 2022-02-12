@@ -62,9 +62,8 @@ Right Click on selected song, and click "List playlists with this Song".
 
 
 #### Note:
-Currently, doesn't work on the currently playing song(like in the bottom bar pictured below), finding a workaround.
-
-![Exception](https://raw.githubusercontent.com/huhridge/huh-spicetify-extensions/main/listPlaylistsWithSong/note_cp.jpg)
+~~Currently, doesn't work on the currently playing song(like in the bottom bar pictured below), finding a workaround.~~
+Now it works, fixed by yours truly!
 
 ## playlistIntersection
 Filename : `playlistIntersection.js`

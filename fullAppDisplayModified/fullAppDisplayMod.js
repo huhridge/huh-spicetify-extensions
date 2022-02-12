@@ -17,6 +17,8 @@
     const CONFIG = getConfig();
     let updateVisual;
     let nextUri, prevColor, nextColor, finImage;
+    let isHidden = false;
+    let time;
 
     const style = document.createElement("style");
     const styleBase = `
@@ -48,6 +50,7 @@
     align-items: center;
     justify-content: center;
     transform: scale(var(--fad-scale));
+    transition: all 1s ease;
 }
 #fad-art-image {
     position: relative;
@@ -108,14 +111,91 @@ body.fad-activated #full-app-display {
 body.video-full-screen.video-full-screen--hide-ui {
     cursor: auto;
 }
-#fad-controls button {
+#fad-controls button, #fad-extracontrols button {
     background-color: transparent;
     border: 0;
     color: currentColor;
     padding: 0 5px;
+    pointer-events: auto;
+}
+#fad-controls button:hover, #fad-extracontrols button:hover{
+    transform: scale(1.1);
 }
 #fad-artist svg, #fad-album svg {
     display: inline-block;
+}
+#fad-upnext {
+    position: absolute;
+    width: 399px;
+    height: 90px;
+    display: flex;
+    border-radius: 10px;
+    animation: textchange 0.5s forwards;
+    transition: clip-path 0.4s;
+}
+#fad-upnext-image {
+    width: 64px;
+    align-self: center;
+    margin-left: 13px;
+    height: 64px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 30%);
+    z-index: 0;
+}
+#fad-upnext-blur {
+    position: absolute;
+    backdrop-filter: blur(15px) brightness(0.6);
+    background-color: rgb(255,255,255,0.1);
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+}
+#fad-upnext-details{
+    margin-left: 15px;
+    margin-top: 8px;
+    font-size: 14.5px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: #ffffff;
+    overflow: hidden;
+    white-space: nowrap;
+}
+#scroll-queue{
+    position: absolute;
+    width: 399px;
+    height: 90px;
+    color: transparent;
+    z-index: 2;
+}
+.dont-scale{
+    transform: scale(calc(1/(var(--fad-scale))));
+}
+.dot-after:after{
+    background-color: currentColor;
+    border-radius: 50%;
+    bottom: 3px;
+    content: "";
+    display: block;
+    height: 4px;
+    left: 50%;
+    position: relative;
+    transform: translateX(-50%);
+    width: 4px;
+}
+.crossed-out:after{
+    background-color: currentColor;
+    bottom: 24px;
+    transform: rotate(45deg);
+    transform-origin: 0 0;
+    content: "";
+    display: block;
+    height: 27px;
+    left: 18px;
+    position: relative;
+    width: 0.5px;
 }
 ::-webkit-scrollbar {
     width: 8px;
@@ -125,29 +205,11 @@ body.video-full-screen.video-full-screen--hide-ui {
     0%{
         opacity: 0;
     }   
-    10%{
-        opacity: 0.1;
-    }
-    20% {
-        opacity: 0.2;
-    }
     30%{
         opacity: 0.3;
     }
-    40%{
-        opacity: 0.4;
-    }
-    50%{
-        opacity: 0.5;
-    }
     60%{
         opacity: 0.6;
-    }
-    70%{
-        opacity: 0.7;
-    }
-    80%{
-        opacity: 0.8;
     }
     90%{
         opacity: 0.9;
@@ -196,6 +258,11 @@ body.video-full-screen.video-full-screen--hide-ui {
 #fad-controls {
     display: flex;
     margin-right: 10px;
+    z-index: 0;
+}
+#fad-extracontrols {
+    height: 28px;
+    display: flex;
 }
 #fad-elapsed {
     min-width: 52px;
@@ -241,7 +308,14 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-controls {
     margin-top: 20px;
-    order: 2
+    order: 2;
+    z-index: 0;
+}
+#fad-extracontrols {
+    order: 3;
+    width: 400px;
+    height: 28px;
+    display: flex;
 }
 #fad-elapsed {
     min-width: 56px;
@@ -289,6 +363,47 @@ body.video-full-screen.video-full-screen--hide-ui {
     ];
     updateStyle();
 
+    function displayUpdate() {
+        let updateText = react.createElement(
+            "p",
+            {
+                className: "fad-update",
+            },
+            `
+            This update brings a lot of needed features:
+            `,
+            react.createElement(
+                "li",
+                {},
+                "Added upnext display: Now when you hover over the next button, it shows the preview of the next song in queue."
+            ),
+            react.createElement(
+                "li",
+                {},
+                "Added extra controls (togglable in the settings): Now you can toggle shuffle, repeat, like songs and view queue from FAD!  The queue is just an extension of the upnext feature, scroll on the queue popup to see the next song"
+            ),
+            react.createElement("li", {}, "Added auto-hide lyrics: If a song doesn't have any lyrics, the lyrics auto-hide."),
+            react.createElement(
+                "li",
+                {},
+                "Added toggleable dev options: These features are WIP, and are bound to be buggy (or ugly). Use at your own risk!"
+            )
+        );
+        Spicetify.PopupModal.display({
+            title: "Update Notes: ",
+            content: updateText,
+            isLarge: true,
+        });
+    }
+
+    function lightnessColor(hex) {
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        let r = parseInt(result[1], 16);
+        let g = parseInt(result[2], 16);
+        let b = parseInt(result[3], 16);
+        return (Math.max(r, g, b) + Math.min(r, g, b)) / 2;
+    }
+
     const DisplayIcon = ({ icon, size }) => {
         return react.createElement("svg", {
             width: size,
@@ -312,11 +427,15 @@ body.video-full-screen.video-full-screen--hide-ui {
         );
     };
 
-    const ButtonIcon = ({ icon, onClick }) => {
+    const ButtonIcon = ({ icon, onClick, className = null, style = null, onMouseEnter = null, onMouseLeave = null }) => {
         return react.createElement(
             "button",
             {
+                className,
+                style,
                 onClick,
+                onMouseEnter,
+                onMouseLeave,
             },
             react.createElement(DisplayIcon, { icon, size: 20 })
         );
@@ -327,6 +446,7 @@ body.video-full-screen.video-full-screen--hide-ui {
         useEffect(() => {
             const update = ({ data }) => setValue(data);
             Spicetify.Player.addEventListener("onprogress", update);
+            // @ts-ignore
             return () => Spicetify.Player.removeEventListener("onprogress", update);
         });
         const duration = Spicetify.Platform.PlayerAPI._state.duration;
@@ -348,28 +468,378 @@ body.video-full-screen.video-full-screen--hide-ui {
         );
     };
 
+    const upNext = async ({ index, queue }) => {
+        let top,
+            left,
+            meta,
+            uri,
+            color,
+            context,
+            invert = false,
+            isContext = false,
+            isColor = false;
+
+        let deets = document.querySelector("#fad-controls");
+        const coor = deets.getBoundingClientRect();
+        let scale = 1 + (CONFIG["scale"] - 1) / 2;
+        if (coor.bottom + 105 > window.innerHeight) {
+            top = window.innerHeight - 110;
+            left = coor.right + 175;
+        } else {
+            top = !CONFIG.vertical && CONFIG.enableExtraControl ? coor.bottom + 40 : coor.bottom + 20;
+            left = CONFIG.vertical || CONFIG.enableExtraControl ? coor.left + (coor.width / 2 - 199.5) : coor.left;
+        }
+        top = top / scale;
+        left = left / scale;
+
+        if (Spicetify.Player.getRepeat() == 2) {
+            uri = Spicetify.Player.data.track.uri;
+            meta = Spicetify.Player.data.track.metadata;
+        } else {
+            // @ts-ignore
+            uri = Spicetify.Queue.nextTracks[index].contextTrack.uri;
+            // @ts-ignore
+            meta = Spicetify.Queue.nextTracks[index].contextTrack.metadata;
+        }
+
+        let artistNames = Object.keys(meta)
+            .filter((key) => key.startsWith("artist_name"))
+            .sort()
+            .map((key) => meta[key])
+            .join(" • ");
+        //@ts-ignore
+        if (Spicetify.Queue.nextTracks[index].provider == "context") {
+            isContext = true;
+            context = Spicetify.Player.data.context_metadata.context_description;
+            if (!context) {
+                const uriObj = Spicetify.URI.fromString(Spicetify.Player.data.context_uri);
+                switch (uriObj.type) {
+                    case Spicetify.URI.Type.SEARCH:
+                        context = `Search`;
+                        break;
+                    case Spicetify.URI.Type.COLLECTION:
+                        context = "Liked Songs";
+                        break;
+                    case Spicetify.URI.Type.STATION:
+                    case Spicetify.URI.Type.RADIO:
+                        // @ts-ignore
+                        const rType = uriObj.args[0];
+                        context = `${rType} radio`;
+                        break;
+                    case Spicetify.URI.Type.FOLDER:
+                        context = "Playlist Folder";
+                        break;
+                    default:
+                        context = "unknown";
+                }
+            }
+        }
+
+        if (CONFIG["optionBackground"] === "colorText") {
+            isColor = true;
+            color = await Spicetify.colorExtractor(uri);
+            color = color[CONFIG["colorChoice"] ?? "LIGHT_VIBRANT"];
+            const luma =
+                parseInt(color.substring(1, 3), 16) * 0.2126 +
+                parseInt(color.substring(3, 5), 16) * 0.7152 +
+                parseInt(color.substring(5, 7), 16) * 0.0722;
+            if (luma > 180) {
+                invert = true;
+            }
+        }
+
+        return react.createElement(
+            "div",
+            {
+                id: "fad-upnext",
+                className: !queue ? "dont-scale" : "",
+                style: {
+                    top: queue ? "" : top,
+                    left: queue ? "" : left,
+                    backgroundColor: isColor ? color : "",
+                    backgroundImage: isColor ? "" : `url(${meta.image_url})`,
+                    backgroundPosition: isColor ? "" : "center",
+                    backgroundRepeat: isColor ? "" : "no-repeat",
+                    backgroundSize: isColor ? "" : "cover",
+                    border: isColor ? "" : "2px solid",
+                    borderColor: isColor ? "" : "white",
+                    boxShadow: !queue ? "0 0 8px rgb(0 0 0 / 30%)" : "",
+                    clipPath: queue ? (index == 0 ? "inset(0px 0px 0px)" : "inset(90px 0px 0px)") : "",
+                },
+            },
+            !isColor &&
+                react.createElement("div", {
+                    id: "fad-upnext-blur",
+                }),
+            react.createElement("div", {
+                id: "fad-upnext-image",
+                style: {
+                    backgroundImage: `url(${meta.image_url})`,
+                },
+            }),
+            react.createElement(
+                "div",
+                {
+                    id: "fad-upnext-details",
+                    style: { filter: invert ? "invert(1)" : "invert(0)" },
+                },
+                react.createElement(
+                    "p",
+                    {
+                        id: "fad-upnext-provider",
+                        style: {
+                            fontWeight: "700",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "300px",
+                        },
+                    },
+                    queue
+                        ? isContext
+                            ? `Track No.${index + 1} in Queue from ${context}`
+                            : `Track No.${index + 1} from Queue`
+                        : isContext
+                        ? `Next From ${context}:`
+                        : "Next in Queue:"
+                    // isContext && react.createElement("em", {}, `${context}:`)
+                ),
+                react.createElement(
+                    "div",
+                    {
+                        id: "fad-upnext-title",
+                        style: {
+                            fontSize: "2vh",
+                            fontWeight: "900",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "300px",
+                        },
+                    },
+                    meta.title
+                ),
+                react.createElement(
+                    "div",
+                    {
+                        id: "fad-upnext-artist",
+                        style: {
+                            fontWeight: "500",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "300px",
+                        },
+                    },
+                    artistNames
+                )
+            )
+        );
+    };
+
     const PlayerControls = () => {
         const [value, setValue] = useState(Spicetify.Player.isPlaying());
+        let timer;
         useEffect(() => {
             const update = ({ data }) => setValue(!data.is_paused);
             Spicetify.Player.addEventListener("onplaypause", update);
+            // @ts-ignore
             return () => Spicetify.Player.removeEventListener("onplaypause", update);
         });
         return react.createElement(
             "div",
             { id: "fad-controls" },
             react.createElement(ButtonIcon, {
+                // @ts-ignore
                 icon: Spicetify.SVGIcons["skip-back"],
                 onClick: Spicetify.Player.back,
             }),
             react.createElement(ButtonIcon, {
+                // @ts-ignore
                 icon: Spicetify.SVGIcons[value ? "pause" : "play"],
                 onClick: Spicetify.Player.togglePlay,
             }),
             react.createElement(ButtonIcon, {
+                // @ts-ignore
                 icon: Spicetify.SVGIcons["skip-forward"],
                 onClick: Spicetify.Player.next,
+                onMouseEnter: async () => {
+                    timer = setTimeout(async () => {
+                        let cont = document.createElement("div");
+                        cont.id = "fad-upnext-container";
+                        let fore = document.querySelector("#fad-foreground");
+                        fore.append(cont);
+                        reactDOM.render(await upNext({ index: 0, queue: false }), cont);
+                    }, 450);
+                },
+                onMouseLeave: () => {
+                    let cont = document.querySelectorAll("#fad-upnext-container");
+                    for (const con of cont) {
+                        con.remove();
+                    }
+                    clearTimeout(timer);
+                },
             })
+        );
+    };
+
+    const ExtraPlayerControls = () => {
+        const [isShuffle, setShuffle] = useState(Spicetify.Player.getShuffle());
+        const [isRepeat, setRepeat] = useState(Spicetify.Player.getRepeat());
+        const [isHeart, setHeart] = useState(Spicetify.Player.getHeart());
+        useEffect(() => {
+            const update = ({ data }) => {
+                data.track.metadata["collection.in_collection"] == "true" ? setHeart(true) : setHeart(false);
+
+                const state = Spicetify.Player.origin._state;
+                if (!state.restrictions?.canToggleShuffle) {
+                    setShuffle(undefined);
+                }
+                if (!state.restrictions?.canToggleRepeatContext || !state.restrictions?.canToggleRepeatTrack) {
+                    setRepeat(undefined);
+                }
+            };
+            Spicetify.Player.addEventListener("songchange", update);
+            return () => Spicetify.Player.removeEventListener("songchange", update);
+        });
+        return react.createElement(
+            "div",
+            {
+                id: "fad-extracontrols",
+                style: {
+                    marginTop: CONFIG.vertical ? (CONFIG.enableControl ? "-25px" : "10px") : CONFIG.enableControl ? "-25px" : "",
+                    width: CONFIG.vertical ? (CONFIG.enableControl ? "400px" : "") : CONFIG.enableControl ? "360px" : "",
+                    alignSelf: !CONFIG.vertical && CONFIG.enableControl ? "baseline" : "",
+                },
+            },
+            react.createElement(ButtonIcon, {
+                // @ts-ignore
+                className: isShuffle
+                    ? "dot-after"
+                    : !Spicetify.Player.origin._state.restrictions?.canToggleShuffle || isShuffle == undefined
+                    ? "crossed-out"
+                    : "",
+                style: {
+                    marginLeft: CONFIG.vertical ? "18px" : "",
+                },
+                icon: Spicetify.SVGIcons["shuffle"],
+                onClick: () => {
+                    Spicetify.Player.toggleShuffle();
+                    setShuffle(!isShuffle);
+                },
+            }),
+            react.createElement(ButtonIcon, {
+                // @ts-ignore
+                className: isRepeat
+                    ? "dot-after"
+                    : !Spicetify.Player.origin._state.restrictions?.canToggleRepeatContext ||
+                      !Spicetify.Player.origin._state.restrictions?.canToggleRepeatTrack ||
+                      isRepeat == undefined
+                    ? "crossed-out"
+                    : "",
+                icon: Spicetify.SVGIcons[isRepeat == 2 ? "repeat-once" : "repeat"],
+                onClick: () => {
+                    Spicetify.Player.toggleRepeat();
+                    setRepeat((isRepeat + 1) % 3);
+                },
+            }),
+            react.createElement(ButtonIcon, {
+                // @ts-ignore
+                icon: Spicetify.SVGIcons[isHeart ? "heart-active" : "heart"],
+                style: {
+                    marginLeft: CONFIG.vertical || CONFIG.enableControl ? "auto" : "",
+                    marginRight: !CONFIG.vertical && !CONFIG.enableControl ? "10px" : "",
+                },
+                onClick: () => {
+                    Spicetify.Player.toggleHeart();
+                    setHeart(!isHeart);
+                },
+            }),
+            CONFIG.enableControl &&
+                react.createElement(ButtonIcon, {
+                    // @ts-ignore
+                    icon: '<path d="M2 2v5l4.33-2.5L2 2zm0 12h14v-1H2v1zm0-4h14V9H2v1zm7-5v1h7V5H9z"></path>',
+                    className: "fad-queue-button",
+                    // @ts-ignore
+                    onClick: async (e) => {
+                        let ele = document.querySelector(".fad-queue-button");
+                        if (ele.classList.contains("dot-after")) {
+                            let cont = document.querySelector("#fad-queue-container");
+                            cont.remove();
+                            ele.classList.remove("dot-after");
+                            return;
+                        }
+                        ele.classList.add("dot-after");
+
+                        let body = document.querySelector("#fad-body");
+
+                        let noticont = document.createElement("div");
+                        noticont.className = "main-notificationBubbleContainer-NotificationBubbleContainer";
+                        let notitext = document.createElement("div");
+                        notitext.className = "main-notificationBubble-NotificationBubble main-notificationBubble-isNotice";
+                        notitext.innerText = "Generating queue...";
+                        noticont.append(notitext);
+                        body.append(noticont);
+                        setTimeout(function () {
+                            noticont.remove();
+                        }, 1000);
+
+                        const next = await upNext({ index: 0, queue: false });
+                        const top = next.props.style.top;
+                        const left = next.props.style.left;
+
+                        CONFIG["viewing"] = 0;
+
+                        let tracks = [];
+                        for (var i = 0; i < 10; i++) {
+                            try {
+                                tracks.push(await upNext({ index: i, queue: true }));
+                            } catch {
+                                break;
+                            }
+                        }
+
+                        let scroll = react.createElement(
+                            "div",
+                            {
+                                id: "scroll-queue",
+                                className: "dont-scale",
+                                style: {
+                                    top: top,
+                                    left: left,
+                                    borderRadius: "10px",
+                                    boxShadow: "0 0 8px rgb(0 0 0 / 30%)",
+                                },
+                                onWheel: (e) => {
+                                    var now = Date.now();
+                                    if (time !== -1 && now - time < 1000) return;
+                                    time = now;
+
+                                    if (e.deltaY > 0) {
+                                        if (CONFIG["viewing"] == tracks.length - 1) {
+                                            return;
+                                        }
+                                        CONFIG["viewing"] += 1;
+                                        var item = document.querySelector("#scroll-queue").childNodes[CONFIG["viewing"]];
+                                        // @ts-ignore
+                                        item.style.clipPath = "inset(0px 0px 0px)";
+                                    } else {
+                                        if (CONFIG["viewing"] == 0) {
+                                            return;
+                                        }
+                                        var item = document.querySelector("#scroll-queue").childNodes[CONFIG["viewing"]];
+                                        // @ts-ignore
+                                        item.style.clipPath = "inset(90px 0px 0px)";
+                                        CONFIG["viewing"] -= 1;
+                                    }
+                                },
+                            },
+                            tracks
+                        );
+                        let fore = document.querySelector("#fad-foreground");
+                        let wrapper = document.createElement("div");
+                        wrapper.id = "fad-queue-container";
+                        fore.append(wrapper);
+                        reactDOM.render(scroll, wrapper);
+                    },
+                })
         );
     };
 
@@ -405,6 +875,11 @@ body.video-full-screen.video-full-screen--hide-ui {
             const uriFinal = nextUri.split(":")[2];
             let isLocal = Spicetify.URI.isLocalTrack(Spicetify.Player.data.track.uri);
 
+            if (isHidden) {
+                updateStyle();
+                isHidden = false;
+            }
+
             if (!isLocal) {
                 const ximage = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uriFinal);
                 finImage = ximage.album.images[0].url;
@@ -424,6 +899,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     .replace(/\(.+?\)/g, "")
                     .replace(/\[.+?\]/g, "")
                     .replace(/\s\-\s.+?$/, "")
+                    .replace(/,.+?$/, "")
                     .trim();
             }
 
@@ -455,7 +931,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     artist: artistName || "",
                     album: albumText || "",
                 });
-                if ((CONFIG["optionBackground"] === "color" || CONFIG["optionBackground"] === "colorText") && !isLocal) {
+                if (CONFIG["optionBackground"] === "colorText" && !isLocal) {
                     this.animateCanvasColor(prevUri, prevUri);
                 } else {
                     this.animateCanvas(this.currTrackImg, this.currTrackImg);
@@ -469,7 +945,7 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.currTrackImg.src = finImage;
             this.currTrackImg.onload = () => {
                 const bgImage = `url("${this.currTrackImg.src}")`;
-                if ((CONFIG["optionBackground"] === "color" || CONFIG["optionBackground"] === "colorText") && !isLocal) {
+                if (CONFIG["optionBackground"] === "colorText" && !isLocal) {
                     this.animateCanvasColor(prevUri, nextUri);
                 } else {
                     this.animateCanvas(previousImg, this.currTrackImg);
@@ -485,6 +961,10 @@ body.video-full-screen.video-full-screen--hide-ui {
                     album: albumText || "",
                     cover: bgImage,
                 });
+
+                if (CONFIG.lyricsPlus) {
+                    autoHideLyrics();
+                }
             };
             this.currTrackImg.onerror = () => {
                 // Placeholder
@@ -558,20 +1038,62 @@ body.video-full-screen.video-full-screen--hide-ui {
                 };
             }
 
-            prevColor = prevColor["LIGHT_VIBRANT"];
-            nextColor = nextColor["LIGHT_VIBRANT"];
+            const { innerWidth: width, innerHeight: height } = window;
+            this.back.width = width;
+            this.back.height = height;
 
-            const luma =
-                parseInt(nextColor.substring(1, 3), 16) * 0.2126 +
-                parseInt(nextColor.substring(3, 5), 16) * 0.7152 +
-                parseInt(nextColor.substring(5, 7), 16) * 0.0722;
+            const ctx = this.back.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+
+            CONFIG["color"] = nextColor;
+            saveConfig();
 
             this.deets.style.filter = "invert(0)";
 
             if (CONFIG.lyricsPlus) {
                 this.lyrics.style.filter = "invert(0)";
             }
-            if (CONFIG["optionBackground"] === "colorText") {
+
+            if (CONFIG.enableGrad) {
+                let colors = new Set();
+                Object.values(prevColor).forEach(colors.add, colors);
+                let colorsarr = [...colors].sort(function (hex1, hex2) {
+                    return lightnessColor(hex2) - lightnessColor(hex1);
+                });
+                prevColor = ctx.createLinearGradient(0, 0, width, 0);
+
+                if (colorsarr.length < 3) {
+                    prevColor.addColorStop(0, colorsarr[0]);
+                    prevColor.addColorStop(1, colorsarr[1] ?? colorsarr[0]);
+                } else {
+                    prevColor.addColorStop(0, colorsarr[0]);
+                    prevColor.addColorStop(0.5, colorsarr[1] ?? colorsarr[0]);
+                    prevColor.addColorStop(1, colorsarr[2] ?? colorsarr[1] ?? colorsarr[0]);
+                }
+
+                colors = new Set();
+                Object.values(nextColor).forEach(colors.add, colors);
+                colorsarr = [...colors].sort(function (hex1, hex2) {
+                    return lightnessColor(hex2) - lightnessColor(hex1);
+                });
+                nextColor = ctx.createLinearGradient(0, 0, width, 0);
+
+                if (colorsarr.length < 3) {
+                    nextColor.addColorStop(0, colorsarr[0]);
+                    nextColor.addColorStop(1, colorsarr[1] ?? colorsarr[0]);
+                } else {
+                    nextColor.addColorStop(0, colorsarr[0]);
+                    nextColor.addColorStop(0.5, colorsarr[1] ?? colorsarr[0]);
+                    nextColor.addColorStop(1, colorsarr[2] ?? colorsarr[1] ?? colorsarr[0]);
+                }
+            } else {
+                prevColor = prevColor[CONFIG["colorChoice"] ?? "LIGHT_VIBRANT"];
+                nextColor = nextColor[CONFIG["colorChoice"] ?? "LIGHT_VIBRANT"];
+                const luma =
+                    parseInt(nextColor.substring(1, 3), 16) * 0.2126 +
+                    parseInt(nextColor.substring(3, 5), 16) * 0.7152 +
+                    parseInt(nextColor.substring(5, 7), 16) * 0.0722;
+
                 console.log(nextColor);
                 if (luma > 180) {
                     this.deets.style.filter = "invert(1)";
@@ -580,12 +1102,6 @@ body.video-full-screen.video-full-screen--hide-ui {
                     }
                 }
             }
-            const { innerWidth: width, innerHeight: height } = window;
-            this.back.width = width;
-            this.back.height = height;
-
-            const ctx = this.back.getContext("2d");
-            ctx.imageSmoothingEnabled = false;
 
             if (!CONFIG.enableFade) {
                 ctx.globalAlpha = 1;
@@ -709,12 +1225,14 @@ body.video-full-screen.video-full-screen--hide-ui {
                             react.createElement(SubInfo, {
                                 id: "fad-artist",
                                 text: this.state.artist,
+                                // @ts-ignore
                                 icon: Spicetify.SVGIcons.artist,
                             }),
                             CONFIG.showAlbum &&
                                 react.createElement(SubInfo, {
                                     id: "fad-album",
                                     text: this.state.album,
+                                    // @ts-ignore
                                     icon: Spicetify.SVGIcons.album,
                                 }),
                             react.createElement(
@@ -722,8 +1240,12 @@ body.video-full-screen.video-full-screen--hide-ui {
                                 {
                                     id: "fad-status",
                                     className: (CONFIG.enableControl || CONFIG.enableProgress) && "active",
+                                    style: {
+                                        flexDirection: !CONFIG.vertical && CONFIG.enableControl && CONFIG.enableExtraControl ? "column" : "",
+                                    },
                                 },
                                 CONFIG.enableControl && react.createElement(PlayerControls),
+                                CONFIG.enableExtraControl && react.createElement(ExtraPlayerControls),
                                 CONFIG.enableProgress && react.createElement(ProgressBar)
                             )
                         )
@@ -751,6 +1273,7 @@ body.video-full-screen.video-full-screen--hide-ui {
     async function toggleFullscreen() {
         if (CONFIG.enableFullscreen) {
             await document.documentElement.requestFullscreen();
+            // @ts-ignore
         } else if (document.webkitIsFullScreen) {
             await document.exitFullscreen();
         }
@@ -762,11 +1285,17 @@ body.video-full-screen.video-full-screen--hide-ui {
         document.body.classList.add(...classes);
         document.body.append(style, container);
         reactDOM.render(react.createElement(FAD), container);
+        if (!CONFIG.showUpdate) {
+            displayUpdate();
+            CONFIG.showUpdate = true;
+            saveConfig();
+        }
 
         requestLyricsPlus();
     }
 
     function deactivate() {
+        // @ts-ignore
         if (CONFIG.enableFullscreen || document.webkitIsFullScreen) {
             document.exitFullscreen();
         }
@@ -796,6 +1325,17 @@ body.video-full-screen.video-full-screen--hide-ui {
             (CONFIG.lyricsPlus ? lyricsPlusBase + lyricsPlusStyleChoices[CONFIG.vertical ? 1 : 0] : "");
     }
 
+    function autoHideLyrics() {
+        if (!document.querySelector("#fad-lyrics-plus-container").innerText) {
+            setTimeout(autoHideLyrics, 100);
+        } else {
+            if (document.querySelector("#fad-lyrics-plus-container").innerText == "(• _ • )") {
+                style.innerHTML = styleBase + styleChoices[CONFIG.vertical ? 1 : 0];
+                isHidden = true;
+            }
+        }
+    }
+
     function requestLyricsPlus() {
         if (CONFIG.lyricsPlus) {
             lastApp = Spicetify.Platform.History.location.pathname;
@@ -804,6 +1344,7 @@ body.video-full-screen.video-full-screen--hide-ui {
             }
         }
         window.dispatchEvent(new Event("fad-request"));
+        autoHideLyrics();
     }
 
     function getConfig() {
@@ -844,14 +1385,15 @@ body.video-full-screen.video-full-screen--hide-ui {
                             func();
                         },
                     },
+                    // @ts-ignore
                     react.createElement(DisplayIcon, { icon: Spicetify.SVGIcons.check, size: 16 })
                 )
             )
         );
     };
 
-    const ConfigSelection = ({ name, field, options, func }) => {
-        const [value, setValue] = useState(CONFIG[field]);
+    const ConfigSelection = ({ name, field, options, def, func }) => {
+        const [value, setValue] = useState(CONFIG[field] ?? def);
         return react.createElement(
             "div",
             { className: "setting-row" },
@@ -884,8 +1426,100 @@ body.video-full-screen.video-full-screen--hide-ui {
         );
     };
 
-    function openConfig(event) {
+    const colorRow = ({ name, color }) => {
+        let originalColor;
+        const modal = document.getElementsByTagName("generic-modal");
+        return react.createElement(
+            "div",
+            { className: "color-row" },
+            react.createElement("label", { className: "col description" }, name),
+            react.createElement(
+                "div",
+                { className: "col action" },
+                react.createElement("div", {
+                    className: "col color",
+                    style: {
+                        height: "20px",
+                        width: "20px",
+                        border: "2px solid black",
+                        clear: "both",
+                        backgroundColor: CONFIG["color"][color],
+                    },
+                    // @ts-ignore
+                    onMouseEnter: (e) => {
+                        originalColor = CONFIG["colorChoice"] ?? "LIGHT_VIBRANT";
+                        CONFIG["colorChoice"] = color;
+                        // @ts-ignore
+                        modal[0].style.opacity = 0.37;
+                        updateVisual();
+                    },
+                    // @ts-ignore
+                    onMouseLeave: (e) => {
+                        CONFIG["colorChoice"] = originalColor;
+                        // @ts-ignore
+                        modal[0].style.opacity = 1;
+                        updateVisual();
+                    },
+                    // @ts-ignore
+                    onClick: (e) => {
+                        CONFIG["colorChoice"] = color;
+                        updateVisual();
+                        // @ts-ignore
+                        modal[0].style.opacity = 1;
+                        Spicetify.PopupModal.hide();
+                    },
+                })
+            )
+        );
+    };
+
+    function openColor(event) {
         event.preventDefault();
+        const style = react.createElement("style", {
+            dangerouslySetInnerHTML: {
+                __html: `
+.color-row::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+.color-row .col {
+    display: flex;
+    padding: 10px 0;
+    align-items: center;
+}
+.color-row .col.description {
+    float: left;
+    padding-right: 15px;
+}
+.color-row .col.action {
+    float: right;
+    text-align: right;
+}
+`,
+            },
+        });
+        let colorContainer = react.createElement(
+            "div",
+            null,
+            style,
+            react.createElement(colorRow, { name: "Dark Vibrant", color: "DARK_VIBRANT" }),
+            react.createElement(colorRow, { name: "Desaturated", color: "DESATURATED" }),
+            react.createElement(colorRow, { name: "Light Vibrant", color: "LIGHT_VIBRANT" }),
+            react.createElement(colorRow, { name: "Prominent", color: "PROMINENT" }),
+            react.createElement(colorRow, { name: "Vibrant", color: "VIBRANT" }),
+            react.createElement(colorRow, { name: "Vibrant(NA)", color: "VIBRANT_NON_ALARMING" })
+        );
+        Spicetify.PopupModal.display({
+            title: "Color Display (Hover to preview)",
+            content: colorContainer,
+        });
+    }
+
+    function openConfig(event) {
+        try {
+            event.preventDefault();
+        } catch {}
         const style = react.createElement("style", {
             dangerouslySetInnerHTML: {
                 __html: `
@@ -947,13 +1581,13 @@ select {
                 field: "optionBackground",
                 options: {
                     albumart: "Album Art",
-                    color: "Colorful background",
-                    colorText: "Colorful background(with dynamic text)",
+                    colorText: "Colorful background",
                 },
                 func: updateVisual,
             }),
             react.createElement(ConfigItem, { name: "Enable progress bar", field: "enableProgress", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Enable controls", field: "enableControl", func: updateVisual }),
+            react.createElement(ConfigItem, { name: "Enable extra controls", field: "enableExtraControl", func: updateVisual }),
             react.createElement(ConfigSelection, {
                 name: "Trim title",
                 field: "trimTitle",
@@ -967,9 +1601,29 @@ select {
             react.createElement(ConfigItem, { name: "Show album", field: "showAlbum", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Show all artists", field: "showAllArtists", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Show icons", field: "icons", func: updateVisual }),
-            react.createElement(ConfigItem, { name: "Vertical mode", field: "vertical", func: updateStyle }),
+            react.createElement(ConfigItem, { name: "Vertical mode", field: "vertical", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Enable fullscreen", field: "enableFullscreen", func: toggleFullscreen }),
-            react.createElement(ConfigItem, { name: "Enable song change animation", field: "enableFade", func: updateVisual })
+            react.createElement(ConfigItem, { name: "Enable song change animation", field: "enableFade", func: updateVisual }),
+            react.createElement(ConfigItem, { name: "Enable development features", field: "enableDev", func: openConfig }),
+
+            CONFIG.enableDev &&
+                CONFIG["optionBackground"] == "colorText" &&
+                react.createElement(ConfigItem, { name: "Enable gradient", field: "enableGrad", func: updateVisual }),
+            CONFIG.enableDev &&
+                react.createElement(ConfigSelection, {
+                    name: "Color Choice (Press F6 for colors)",
+                    field: "colorChoice",
+                    options: {
+                        DARK_VIBRANT: "Dark Vibrant",
+                        DESATURATED: "Desaturated",
+                        LIGHT_VIBRANT: "Light Vibrant",
+                        PROMINENT: "Prominent",
+                        VIBRANT: "Vibrant",
+                        VIBRANT_NON_ALARMING: "Vibrant(NA)",
+                    },
+                    def: "LIGHT_VIBRANT",
+                    func: updateVisual,
+                })
         );
         Spicetify.PopupModal.display({
             title: "Full App Display",
@@ -980,9 +1634,11 @@ select {
     // Add activator on top bar
     new Spicetify.Topbar.Button(
         "Full App Display",
+        // @ts-ignore
         `<svg role="img" height="16" width="16" viewBox="0 0 16 16" fill="currentColor">${Spicetify.SVGIcons.projector}</svg>`,
         activate
     );
 
     Spicetify.Mousetrap.bind("f11", toggleFad);
+    Spicetify.Mousetrap.bind("f6", openColor);
 })();

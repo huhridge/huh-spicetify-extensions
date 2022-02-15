@@ -992,16 +992,22 @@ body.video-full-screen.video-full-screen--hide-ui {
 
             if (!CONFIG.enableFade) {
                 ctx.globalAlpha = 1;
-                ctx.drawImage(nextImg, -blur * 2, -blur * 2 - (width - height) / 2, dim + 4 * blur, dim + 4 * blur);
+                width > height
+                    ? ctx.drawImage(nextImg, -blur * 2, -blur * 2 - (width - height) / 2, dim + 4 * blur, dim + 4 * blur)
+                    : ctx.drawImage(nextImg, -blur * 2 - (height - width) / 2, -blur * 2, dim + 4 * blur, dim + 4 * blur);
                 return;
             }
 
             let factor = 0.0;
             const animate = () => {
                 ctx.globalAlpha = 1;
-                ctx.drawImage(prevImg, -blur * 2, -blur * 2 - (width - height) / 2, dim + 4 * blur, dim + 4 * blur);
+                width > height
+                    ? ctx.drawImage(prevImg, -blur * 2, -blur * 2 - (width - height) / 2, dim + 4 * blur, dim + 4 * blur)
+                    : ctx.drawImage(prevImg, -blur * 2 - (height - width) / 2, -blur * 2, dim + 4 * blur, dim + 4 * blur);
                 ctx.globalAlpha = Math.sin((Math.PI / 2) * factor);
-                ctx.drawImage(nextImg, -blur * 2, -blur * 2 - (width - height) / 2, dim + 4 * blur, dim + 4 * blur);
+                width > height
+                    ? ctx.drawImage(nextImg, -blur * 2, -blur * 2 - (width - height) / 2, dim + 4 * blur, dim + 4 * blur)
+                    : ctx.drawImage(nextImg, -blur * 2 - (height - width) / 2, -blur * 2, dim + 4 * blur, dim + 4 * blur);
 
                 if (factor < 1.0) {
                     factor += 0.016;

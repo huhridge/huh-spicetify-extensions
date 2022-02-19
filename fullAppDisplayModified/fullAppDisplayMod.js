@@ -71,7 +71,7 @@
     transform: translateZ(0);
     filter: blur(6px);
     backdrop-filter: blur(6px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
 }
 #fad-progress-container {
     width: 100%;
@@ -89,7 +89,7 @@
     height: 100%;
     border-radius: 6px;
     background-color: #ffffff;
-    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.8);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.8) !important;
 }
 #fad-duration {
     margin-left: 10px;
@@ -141,7 +141,7 @@ body.video-full-screen.video-full-screen--hide-ui {
     background-size: cover;
     background-position: center;
     border-radius: 5px;
-    box-shadow: 0 4px 8px rgb(0 0 0 / 30%);
+    box-shadow: 0 4px 8px rgb(0 0 0 / 30%) !important;
     z-index: 0;
 }
 #fad-upnext-blur {
@@ -313,7 +313,7 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-extracontrols {
     order: 3;
-    width: 400px;
+    width: 100%;
     height: 28px;
     display: flex;
 }
@@ -335,7 +335,6 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-lyrics-plus-container {
     width: 50vw;
-    filter: invert(0);
 }
 `;
     const lyricsPlusStyleChoices = [
@@ -358,6 +357,25 @@ body.video-full-screen.video-full-screen--hide-ui {
 #fad-artist, #fad-album {
     font-size: 2.5vw;
     font-weight: var(--glue-font-weight-medium);
+}
+        `,
+    ];
+
+    const verticalMonitorStyle = [
+        `
+#fad-body {
+    grid-template-columns: none;
+}
+#fad-foreground, #fad-lyrics-plus-container {
+    width: 100%;
+    height: 50vh;
+}
+#fad-foreground {
+    padding: 0 50px 0;
+}
+.lyrics-lyricsContainer-LyricsContainer.fad-enabled {
+    height: 150vh;
+    --lyrics-align-text: center !important;
 }
         `,
     ];
@@ -608,7 +626,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     {
                         id: "fad-upnext-title",
                         style: {
-                            fontSize: "2vh",
+                            fontSize: "18px",
                             fontWeight: "900",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -705,7 +723,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                 id: "fad-extracontrols",
                 style: {
                     marginTop: CONFIG.vertical ? (CONFIG.enableControl ? "-25px" : "10px") : CONFIG.enableControl ? "-25px" : "",
-                    width: CONFIG.vertical ? (CONFIG.enableControl ? "400px" : "") : CONFIG.enableControl ? "360px" : "",
+                    width: CONFIG.vertical ? (CONFIG.enableControl ? "100%" : "") : CONFIG.enableControl ? "360px" : "",
                     alignSelf: !CONFIG.vertical && CONFIG.enableControl ? "baseline" : "",
                 },
             },
@@ -982,7 +1000,8 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.deets.style.filter = "invert(0)";
 
             if (CONFIG.lyricsPlus) {
-                this.lyrics.style.filter = "invert(0)";
+                this.lyrics.style.setProperty("--lyrics-color-active", "#ffffff");
+                this.lyrics.style.setProperty("--lyrics-color-inactive", "#ffffff50");
             }
 
             const ctx = this.back.getContext("2d");
@@ -1057,7 +1076,8 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.deets.style.filter = "invert(0)";
 
             if (CONFIG.lyricsPlus) {
-                this.lyrics.style.filter = "invert(0)";
+                this.lyrics.style.setProperty("--lyrics-color-active", "#ffffff");
+                this.lyrics.style.setProperty("--lyrics-color-inactive", "#ffffff50");
             }
 
             if (CONFIG.enableGrad) {
@@ -1104,7 +1124,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                 if (luma > 180) {
                     this.deets.style.filter = "invert(1)";
                     if (CONFIG.lyricsPlus) {
-                        this.lyrics.style.filter = "invert(1)";
+                        this.lyrics.style.setProperty("--lyrics-color-active", "#000000");
+                        this.lyrics.style.setProperty("--lyrics-color-inactive", "#00000050");
                     }
                 }
             }
@@ -1328,7 +1349,11 @@ body.video-full-screen.video-full-screen--hide-ui {
         style.innerHTML =
             styleBase +
             styleChoices[CONFIG.vertical ? 1 : 0] +
-            (CONFIG.lyricsPlus ? lyricsPlusBase + lyricsPlusStyleChoices[CONFIG.vertical ? 1 : 0] : "");
+            (CONFIG.lyricsPlus
+                ? lyricsPlusBase +
+                  lyricsPlusStyleChoices[CONFIG.vertical ? 1 : 0] +
+                  (window.innerHeight > window.innerWidth && CONFIG.verticalMonitor ? verticalMonitorStyle : "")
+                : "");
     }
 
     function autoHideLyrics() {
@@ -1580,6 +1605,7 @@ select {
                 func: () => {
                     updateVisual();
                     requestLyricsPlus();
+                    openConfig();
                 },
             }),
             react.createElement(ConfigSelection, {
@@ -1608,6 +1634,9 @@ select {
             react.createElement(ConfigItem, { name: "Show all artists", field: "showAllArtists", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Show icons", field: "icons", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Vertical mode", field: "vertical", func: updateVisual }),
+            CONFIG.lyricsPlus &&
+                window.innerHeight > window.innerWidth &&
+                react.createElement(ConfigItem, { name: "Vertical Monitor Mode", field: "verticalMonitor", func: updateStyle }),
             react.createElement(ConfigItem, { name: "Enable fullscreen", field: "enableFullscreen", func: toggleFullscreen }),
             react.createElement(ConfigItem, { name: "Enable song change animation", field: "enableFade", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Enable development features", field: "enableDev", func: openConfig }),

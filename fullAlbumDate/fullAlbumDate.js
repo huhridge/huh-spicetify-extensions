@@ -6,7 +6,7 @@
         const albumDate = new Date(albumInfo.year, (albumInfo.month || 1) - 1, albumInfo.day || 0);
         return albumDate.toLocaleString("default", { year: "numeric", month: "short", day: "numeric" });
     }
-    
+
     if (!(Player && Menu && LocalStorage && Platform)) {
         setTimeout(fullAlbumDate, 1000);
         return;
@@ -22,7 +22,8 @@
 
     function setDate(newDate) {
         const dateElement =
-            document.querySelector(".main-entityHeader-divider.main-type-mesto") ?? document.querySelector(".main-entityHeader-metaData > span");
+            document.querySelector(".main-entityHeader-divider.main-type-mesto") ??
+            document.querySelector(".main-entityHeader-metaData span:nth-last-child(2)");
         dateElement.textContent = newDate;
     }
 

@@ -115,6 +115,8 @@
                                 visibility: "visible",
                                 width: "100%",
                                 lineHeight: "3vw",
+                                letterSpacing: "-0.04em",
+                                fontWeight: "900",
                             },
                             ref: (el) => el && el.style.setProperty("font-size", "2.5vw", "important"),
                         },
@@ -459,10 +461,11 @@
                         marginLeft: "auto",
                         marginRight: "16px",
                         borderWidth: "0px",
+                        borderRadius: "5px",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: "var(--spice-button)",
                     },
+                    ref: (el) => el && el.style.setProperty("background-color", "var(--spice-button)", "important"),
                     onClick: () => {
                         let ele = document.querySelector(".changeMode.main-topBar-button");
                         if (LocalStorage.get("spicetify-intermode") == "Intersect" && Spicetify.LocalStorage.get("spicetify-interorder") == "0") {
@@ -516,10 +519,11 @@
                         height: "32px",
                         marginRight: "16px",
                         borderWidth: "0px",
+                        borderRadius: "5px",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: "var(--spice-button)",
                     },
+                    ref: (el) => el && el.style.setProperty("background-color", "var(--spice-button)", "important"),
                     onClick: () => {
                         convertToPlaylist();
                     },
@@ -572,7 +576,38 @@
         document
             .querySelector(".main-topBar-topbarContent.main-entityHeader-topbarContent.main-entityHeader-topbarContentFadeIn")
             .classList.remove("main-entityHeader-topbarContentFadeIn");
-
+        let style = document.createElement("style");
+        style.innerHTML = `
+.main-type-mesto {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: normal;
+    line-height: 16px;
+    text-transform: none
+}
+.main-type-bass {
+    font-size: 96px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+    line-height: 96px;
+    text-transform: none
+}
+.main-type-minuet {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: .1em;
+    line-height: 16px;
+    text-transform: uppercase
+}
+.main-type-ballad {
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: normal;
+    line-height: 24px;
+    text-transform: none
+}
+        `;
+        section.append(style);
         let playContainer = document.createElement("div");
         playContainer.classList.add("main-trackList-trackListHeaderRow");
         playContainer.style.display = "flex";

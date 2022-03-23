@@ -6,7 +6,7 @@
 
 /// <reference path="../globals.d.ts" />
 (function FullAppDisplay() {
-    if (!Spicetify.Keyboard || !Spicetify.React || !Spicetify.ReactDOM) {
+    if (!Spicetify.Keyboard || !Spicetify.React || !Spicetify.ReactDOM || !Spicetify.Platform) {
         setTimeout(FullAppDisplay, 200);
         return;
     }
@@ -14,7 +14,18 @@
     const { React: react, ReactDOM: reactDOM } = Spicetify;
     const { useState, useEffect } = react;
 
+    const spotifyVersion = Number(Spicetify.Platform.PlatformData.client_version_quadruple.split(".")[2]);
+
     const CONFIG = getConfig();
+
+    if (!CONFIG["colorChoice"]) {
+        if (spotifyVersion < 81) {
+            CONFIG["colorChoice"] = "LIGHT_VIBRANT";
+        } else {
+            CONFIG["colorChoice"] = "colorLight";
+        }
+        saveConfig();
+    }
     let updateVisual;
     let nextUri, prevColor, nextColor, finImage;
     let isHidden = false;
@@ -381,37 +392,43 @@ body.video-full-screen.video-full-screen--hide-ui {
     ];
     updateStyle();
 
-    function displayUpdate() {
-        let updateText = react.createElement(
-            "p",
-            {
-                className: "fad-update",
-            },
-            `
-            This update brings a lot of needed features:
-            `,
-            react.createElement(
-                "li",
-                {},
-                "Added upnext display: Now when you hover over the next button, it shows the preview of the next song in queue."
-            ),
-            react.createElement(
-                "li",
-                {},
-                "Added extra controls (togglable in the settings): Now you can toggle shuffle, repeat, like songs and view queue from FAD!  The queue is just an extension of the upnext feature, scroll on the queue popup to see the next song"
-            ),
-            react.createElement("li", {}, "Added auto-hide lyrics: If a song doesn't have any lyrics, the lyrics auto-hide."),
-            react.createElement(
-                "li",
-                {},
-                "Added toggleable dev options: These features are WIP, and are bound to be buggy (or ugly). Use at your own risk!"
-            )
-        );
-        Spicetify.PopupModal.display({
-            title: "Update Notes: ",
-            content: updateText,
-            isLarge: true,
-        });
+    async function fetchColors(uri) {
+        let colors = {};
+        if (spotifyVersion < 81) {
+            try {
+                colors = await Spicetify.colorExtractor(uri);
+            } catch {
+                colors = {
+                    DARK_VIBRANT: "#000000",
+                    DESATURATED: "#000000",
+                    LIGHT_VIBRANT: "#000000",
+                    PROMINENT: "#000000",
+                    VIBRANT: "#000000",
+                    VIBRANT_NON_ALARMING: "#000000",
+                };
+            }
+        } else {
+            try {
+                const meta = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uri.split(":")[2]);
+                let imageUri = meta.album.images[0].url;
+                const colorResp = await Spicetify.CosmosAsync.get(
+                    `https://api-partner.spotify.com/pathfinder/v1/query?operationName=fetchExtractedColors&variables=%7B%22uris%22%3A%5B%22${imageUri}%22%5D%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22d7696dd106f3c84a1f3ca37225a1de292e66a2d5aced37a66632585eeb3bbbfa%22%7D%7D`
+                );
+                Object.keys(colorResp.data.extractedColors[0])
+                    .filter((key) => key.startsWith("color"))
+                    .forEach((key) => {
+                        colors[key] = colorResp.data.extractedColors[0][key].hex;
+                    });
+            } catch (err) {
+                console.log(err);
+                colors = {
+                    colorDark: "#000000",
+                    colorLight: "#000000",
+                    colorRaw: "#000000",
+                };
+            }
+        }
+        return colors;
     }
 
     function lightnessColor(hex) {
@@ -555,8 +572,8 @@ body.video-full-screen.video-full-screen--hide-ui {
 
         if (CONFIG["optionBackground"] === "colorText") {
             isColor = true;
-            color = await Spicetify.colorExtractor(uri);
-            color = color[CONFIG["colorChoice"] ?? "LIGHT_VIBRANT"];
+            color = await fetchColors(uri);
+            color = color[CONFIG["colorChoice"]];
             const luma =
                 parseInt(color.substring(1, 3), 16) * 0.2126 +
                 parseInt(color.substring(3, 5), 16) * 0.7152 +
@@ -581,9 +598,9 @@ body.video-full-screen.video-full-screen--hide-ui {
                     backgroundSize: isColor ? "" : "cover",
                     border: isColor ? "" : "2px solid",
                     borderColor: isColor ? "" : "white",
-                    boxShadow: !queue ? "0 0 8px rgb(0 0 0 / 30%)" : "",
                     clipPath: queue ? (index == 0 ? "inset(0px 0px 0px)" : "inset(90px 0px 0px)") : "",
                 },
+                ref: (el) => !queue && el && el.style.setProperty("box-shadow", "0 0 8px rgb(0 0 0 / 30%)", "important"),
             },
             !isColor &&
                 react.createElement("div", {
@@ -878,9 +895,12 @@ body.video-full-screen.video-full-screen--hide-ui {
 
         async getAlbumDate(uri) {
             const id = uri.replace("spotify:album:", "");
-            const albumInfo = await Spicetify.CosmosAsync.get(`hm://album/v1/album-app/album/${id}/desktop`);
+            // const albumInfo = await Spicetify.CosmosAsync.get(`hm://album/v1/album-app/album/${id}/desktop`);
 
-            const albumDate = new Date(albumInfo.year, (albumInfo.month || 1) - 1, albumInfo.day || 0);
+            // const albumDate = new Date(albumInfo.year, (albumInfo.month || 1) - 1, albumInfo.day || 0);
+            // hermes protocol deprecated 1.1.81 onwards
+            const albumInfo = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${id}`);
+            const albumDate = new Date(albumInfo.release_date);
             const recentDate = new Date();
             recentDate.setMonth(recentDate.getMonth() - 6);
             return albumDate.toLocaleString("default", albumDate > recentDate ? { year: "numeric", month: "short" } : { year: "numeric" });
@@ -892,11 +912,6 @@ body.video-full-screen.video-full-screen--hide-ui {
             nextUri = Spicetify.Player.data.track.uri;
             const uriFinal = nextUri.split(":")[2];
             let isLocal = Spicetify.URI.isLocalTrack(Spicetify.Player.data.track.uri);
-
-            if (isHidden) {
-                updateStyle();
-                isHidden = false;
-            }
 
             if (!isLocal) {
                 const ximage = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uriFinal);
@@ -955,6 +970,11 @@ body.video-full-screen.video-full-screen--hide-ui {
                     this.animateCanvas(this.currTrackImg, this.currTrackImg);
                 }
                 return;
+            }
+
+            if (isHidden) {
+                isHidden = false;
+                updateStyle();
             }
 
             // TODO: Pre-load next track
@@ -1038,30 +1058,8 @@ body.video-full-screen.video-full-screen--hide-ui {
         }
 
         async animateCanvasColor(prevUri, nextUri) {
-            try {
-                prevColor = await Spicetify.colorExtractor(prevUri);
-            } catch {
-                prevColor = {
-                    DARK_VIBRANT: "#000000",
-                    DESATURATED: "#000000",
-                    LIGHT_VIBRANT: "#000000",
-                    PROMINENT: "#000000",
-                    VIBRANT: "#000000",
-                    VIBRANT_NON_ALARMING: "#000000",
-                };
-            }
-            try {
-                nextColor = await Spicetify.colorExtractor(nextUri);
-            } catch {
-                nextColor = {
-                    DARK_VIBRANT: "#000000",
-                    DESATURATED: "#000000",
-                    LIGHT_VIBRANT: "#000000",
-                    PROMINENT: "#000000",
-                    VIBRANT: "#000000",
-                    VIBRANT_NON_ALARMING: "#000000",
-                };
-            }
+            prevColor = await fetchColors(prevUri);
+            nextColor = await fetchColors(nextUri);
 
             const { innerWidth: width, innerHeight: height } = window;
             this.back.width = width;
@@ -1113,8 +1111,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                     nextColor.addColorStop(1, colorsarr[2] ?? colorsarr[1] ?? colorsarr[0]);
                 }
             } else {
-                prevColor = prevColor[CONFIG["colorChoice"] ?? "LIGHT_VIBRANT"];
-                nextColor = nextColor[CONFIG["colorChoice"] ?? "LIGHT_VIBRANT"];
+                prevColor = prevColor[CONFIG["colorChoice"]];
+                nextColor = nextColor[CONFIG["colorChoice"]];
                 const luma =
                     parseInt(nextColor.substring(1, 3), 16) * 0.2126 +
                     parseInt(nextColor.substring(3, 5), 16) * 0.7152 +
@@ -1312,11 +1310,6 @@ body.video-full-screen.video-full-screen--hide-ui {
         document.body.classList.add(...classes);
         document.body.append(style, container);
         reactDOM.render(react.createElement(FAD), container);
-        if (!CONFIG.showUpdate) {
-            displayUpdate();
-            CONFIG.showUpdate = true;
-            saveConfig();
-        }
 
         requestLyricsPlus();
     }
@@ -1349,7 +1342,7 @@ body.video-full-screen.video-full-screen--hide-ui {
         style.innerHTML =
             styleBase +
             styleChoices[CONFIG.vertical ? 1 : 0] +
-            (CONFIG.lyricsPlus
+            (CONFIG.lyricsPlus && !isHidden
                 ? lyricsPlusBase +
                   lyricsPlusStyleChoices[CONFIG.vertical ? 1 : 0] +
                   (window.innerHeight > window.innerWidth && CONFIG.verticalMonitor ? verticalMonitorStyle : "")
@@ -1361,8 +1354,8 @@ body.video-full-screen.video-full-screen--hide-ui {
             setTimeout(autoHideLyrics, 100);
         } else {
             if (document.querySelector("#fad-lyrics-plus-container").innerText == "(• _ • )") {
-                style.innerHTML = styleBase + styleChoices[CONFIG.vertical ? 1 : 0];
                 isHidden = true;
+                updateStyle();
             }
         }
     }
@@ -1478,7 +1471,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     },
                     // @ts-ignore
                     onMouseEnter: (e) => {
-                        originalColor = CONFIG["colorChoice"] ?? "LIGHT_VIBRANT";
+                        originalColor = CONFIG["colorChoice"];
                         CONFIG["colorChoice"] = color;
                         // @ts-ignore
                         modal[0].style.opacity = 0.37;
@@ -1530,17 +1523,27 @@ body.video-full-screen.video-full-screen--hide-ui {
 `,
             },
         });
-        let colorContainer = react.createElement(
-            "div",
-            null,
-            style,
-            react.createElement(colorRow, { name: "Dark Vibrant", color: "DARK_VIBRANT" }),
-            react.createElement(colorRow, { name: "Desaturated", color: "DESATURATED" }),
-            react.createElement(colorRow, { name: "Light Vibrant", color: "LIGHT_VIBRANT" }),
-            react.createElement(colorRow, { name: "Prominent", color: "PROMINENT" }),
-            react.createElement(colorRow, { name: "Vibrant", color: "VIBRANT" }),
-            react.createElement(colorRow, { name: "Vibrant(NA)", color: "VIBRANT_NON_ALARMING" })
-        );
+        let colorContainer =
+            spotifyVersion < 81
+                ? react.createElement(
+                      "div",
+                      null,
+                      style,
+                      react.createElement(colorRow, { name: "Dark Vibrant", color: "DARK_VIBRANT" }),
+                      react.createElement(colorRow, { name: "Desaturated", color: "DESATURATED" }),
+                      react.createElement(colorRow, { name: "Light Vibrant", color: "LIGHT_VIBRANT" }),
+                      react.createElement(colorRow, { name: "Prominent", color: "PROMINENT" }),
+                      react.createElement(colorRow, { name: "Vibrant", color: "VIBRANT" }),
+                      react.createElement(colorRow, { name: "Vibrant(NA)", color: "VIBRANT_NON_ALARMING" })
+                  )
+                : react.createElement(
+                      "div",
+                      null,
+                      style,
+                      react.createElement(colorRow, { name: "Dark Color", color: "colorDark" }),
+                      react.createElement(colorRow, { name: "Light Color", color: "colorLight" }),
+                      react.createElement(colorRow, { name: "Raw Color", color: "colorRaw" })
+                  );
         Spicetify.PopupModal.display({
             title: "Color Display (Hover to preview)",
             content: colorContainer,
@@ -1644,7 +1647,9 @@ select {
             CONFIG.enableDev &&
                 CONFIG["optionBackground"] == "colorText" &&
                 react.createElement(ConfigItem, { name: "Enable gradient", field: "enableGrad", func: updateVisual }),
+
             CONFIG.enableDev &&
+                spotifyVersion < 81 &&
                 react.createElement(ConfigSelection, {
                     name: "Color Choice (Press F6 for colors)",
                     field: "colorChoice",
@@ -1657,6 +1662,19 @@ select {
                         VIBRANT_NON_ALARMING: "Vibrant(NA)",
                     },
                     def: "LIGHT_VIBRANT",
+                    func: updateVisual,
+                }),
+            CONFIG.enableDev &&
+                spotifyVersion >= 81 &&
+                react.createElement(ConfigSelection, {
+                    name: "Color Choice (Press F6 for colors)",
+                    field: "colorChoice",
+                    options: {
+                        colorDark: "Dark Color",
+                        colorLight: "Light Color",
+                        colorRaw: "Raw Color",
+                    },
+                    def: "colorLight",
                     func: updateVisual,
                 })
         );

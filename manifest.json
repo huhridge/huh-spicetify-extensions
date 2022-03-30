@@ -7,18 +7,11 @@
         "readme": "fullAppDisplayModified/README.md"
     },
     {
-        "name": "Display full Album date",
-        "description": "Display the full album date instead of just year",
-        "preview": "fullAlbumDate/preview.jpg",
-        "main": "fullAlbumDate/fullAlbumDate.js",
-        "readme": "fullAlbumDate/README.md"
-    },
-    {
-        "name": "GoToSong",
-        "description": "Go to currently playing song in playlist",
-        "preview": "goToSong/preview1.jpg",
-        "main": "goToSong/goToSong.js",
-        "readme": "goToSong/README.md"
+        "name" : "SkipStats",
+        "description" : "See your skipping stats in playlists and albums!",
+        "preview" : "",
+        "main" : "skipStats/skipStats.js",
+        "readme" : "skipStats/README.md"
     },
     {
         "name": "listPlaylistsWithSong",
@@ -28,10 +21,24 @@
         "readme": "listPlaylistsWithSong/README.md"
     },
     {
+        "name": "GoToSong",
+        "description": "Go to currently playing song in playlist",
+        "preview": "goToSong/preview1.jpg",
+        "main": "goToSong/goToSong.js",
+        "readme": "goToSong/README.md"
+    },
+    {
         "name": "playlistIntersection",
         "description": "Adds context menu buttons to see songs in common between two playlists.",
         "preview": "playlistIntersection/preview.jpg",
         "main": "playlistIntersection/playlistIntersection.js",
         "readme": "playlistIntersection/README.md"
+    },
+    {
+        "name": "Display full Album date",
+        "description": "Display the full album date instead of just year",
+        "preview": "fullAlbumDate/preview.jpg",
+        "main": "fullAlbumDate/fullAlbumDate.js",
+        "readme": "fullAlbumDate/README.md"
     }
 ]

@@ -9,7 +9,7 @@
     {
         "name" : "SkipStats",
         "description" : "See your skipping stats in playlists and albums!",
-        "preview" : "",
+        "preview" : "skipStats/preview.jpg",
         "main" : "skipStats/skipStats.js",
         "readme" : "skipStats/README.md"
     },

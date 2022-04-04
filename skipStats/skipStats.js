@@ -52,15 +52,20 @@
         LocalStorage.set("skipData", JSON.stringify(skipData));
     }
 
-    function resetSkips(mode) {
+    function resetSkips(mode, uri = "") {
         if (mode === "all") {
-            LocalStorage.remove("skipData");
+            LocalStorage.set("skipData", JSON.stringify({}));
             Spicetify.showNotification("Resetted all skip data!");
         } else if (mode === "current") {
             let skipData = JSON.parse(LocalStorage.get("skipData"));
             skipData[Spicetify.Player.data.track.uri] = 0;
             LocalStorage.set("skipData", JSON.stringify(skipData));
             Spicetify.showNotification("Resetted skip data for current track!");
+        } else if (mode === "context") {
+            let skipData = JSON.parse(LocalStorage.get("skipData"));
+            skipData[uri] = 0;
+            LocalStorage.set("skipData", JSON.stringify(skipData));
+            Spicetify.showNotification("Resetted skip data for selected track!");
         }
     }
 
@@ -350,5 +355,16 @@ td.auto-skip {
             return false;
         },
         "skip-forward"
+    ).register();
+
+    new Spicetify.ContextMenu.Item(
+        "Reset Skips for this track",
+        (uris) => {
+            resetSkips("context", uris[0]);
+        },
+        (uris) => {
+            if (uris.length != 1) return false;
+            return Spicetify.URI.fromString(uris[0]).type == Spicetify.URI.Type.TRACK;
+        }
     ).register();
 })();

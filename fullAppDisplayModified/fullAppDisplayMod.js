@@ -911,11 +911,16 @@ body.video-full-screen.video-full-screen--hide-ui {
             const prevUri = nextUri;
             nextUri = Spicetify.Player.data.track.uri;
             const uriFinal = nextUri.split(":")[2];
-            let isLocal = Spicetify.URI.isLocalTrack(Spicetify.Player.data.track.uri);
+            let isLocalOrEpisode =
+                Spicetify.URI.isLocalTrack(Spicetify.Player.data.track.uri) || Spicetify.URI.isEpisode(Spicetify.Player.data.track.uri);
 
-            if (!isLocal) {
+            if (!isLocalOrEpisode) {
                 const ximage = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uriFinal);
                 finImage = ximage.album.images[0].url;
+                style.innerHTML =
+                    styleBase +
+                    styleChoices[CONFIG.vertical ? 1 : 0] +
+                    (window.innerHeight > window.innerWidth && CONFIG.verticalMonitor ? verticalMonitorStyle : "");
             } else {
                 finImage = meta.image_xlarge_url;
             }
@@ -964,7 +969,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     artist: artistName || "",
                     album: albumText || "",
                 });
-                if (CONFIG["optionBackground"] === "colorText" && !isLocal) {
+                if (CONFIG["optionBackground"] === "colorText" && !isLocalOrEpisode) {
                     this.animateCanvasColor(prevUri, prevUri);
                 } else {
                     this.animateCanvas(this.currTrackImg, this.currTrackImg);
@@ -983,7 +988,7 @@ body.video-full-screen.video-full-screen--hide-ui {
             this.currTrackImg.src = finImage;
             this.currTrackImg.onload = () => {
                 const bgImage = `url("${this.currTrackImg.src}")`;
-                if (CONFIG["optionBackground"] === "colorText" && !isLocal) {
+                if (CONFIG["optionBackground"] === "colorText" && !isLocalOrEpisode) {
                     this.animateCanvasColor(prevUri, nextUri);
                 } else {
                     this.animateCanvas(previousImg, this.currTrackImg);

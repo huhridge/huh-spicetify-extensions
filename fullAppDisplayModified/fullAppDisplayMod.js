@@ -917,12 +917,13 @@ body.video-full-screen.video-full-screen--hide-ui {
             if (!isLocalOrEpisode) {
                 const ximage = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uriFinal);
                 finImage = ximage.album.images[0].url;
+                updateStyle();
+            } else {
+                finImage = meta.image_xlarge_url;
                 style.innerHTML =
                     styleBase +
                     styleChoices[CONFIG.vertical ? 1 : 0] +
                     (window.innerHeight > window.innerWidth && CONFIG.verticalMonitor ? verticalMonitorStyle : "");
-            } else {
-                finImage = meta.image_xlarge_url;
             }
 
             // prepare title

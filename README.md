@@ -33,7 +33,7 @@ Minimal album cover art display with beautiful blur effect background. Activatin
  
 </details>
 
-For more information: [fullAppDisplayMod README](/fullAppDisplayMod/README.md)
+For more information: [fullAppDisplayMod README](/fullAppDisplayModified/README.md)
 
 ## skipStats
 

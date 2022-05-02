@@ -14,18 +14,23 @@
     const { React: react, ReactDOM: reactDOM } = Spicetify;
     const { useState, useEffect } = react;
 
-    const spotifyVersion = Number(Spicetify.Platform.PlatformData.client_version_quadruple.split(".")[2]);
-
     const CONFIG = getConfig();
 
-    if (!CONFIG["colorChoice"]) {
-        if (spotifyVersion < 81) {
-            CONFIG["colorChoice"] = "LIGHT_VIBRANT";
-        } else {
-            CONFIG["colorChoice"] = "colorLight";
-        }
+    if (
+        !CONFIG["colorChoice"] ||
+        CONFIG["colorChoice"] == "colorDark" ||
+        CONFIG["colorChoice"] == "colorLight" ||
+        CONFIG["colorChoice"] == "colorRaw"
+    ) {
+        CONFIG["colorChoice"] = "LIGHT_VIBRANT";
         saveConfig();
     }
+
+    if (!CONFIG["version"]) {
+        CONFIG["version"] = "1.0";
+        saveConfig();
+    }
+
     let updateVisual;
     let nextUri, prevColor, nextColor, finImage;
     let isHidden = false;
@@ -92,6 +97,7 @@
 #fad-progress {
     width: 100%;
     height: 6px;
+    margin: 6px 0 6px;
     border-radius: 6px;
     background-color: #ffffff50;
     overflow: hidden;
@@ -101,6 +107,37 @@
     border-radius: 6px;
     background-color: #ffffff;
     box-shadow: 4px 0 12px rgba(0, 0, 0, 0.8) !important;
+}
+#fad-volume {
+    width: 4rem;
+    height: 16rem;
+    position: fixed;
+    left: 1rem;
+}
+#fad-volicon {
+    height: fit-content;
+    display: grid;
+    justify-content: start;
+}
+#fad-volbar {
+    display: flex;
+    height: 200px;
+    width: 8px;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #ffffff50;
+    justify-content: center;
+    padding-top: 10px;
+    align-items: end;
+    margin-left: 27.5px;
+    margin-top: 10px;
+    position: absolute;
+}
+#fad-volbar-inner {
+    width: 8px;
+    border-radius: 6px;
+    background-color: rgb(255, 255, 255);
+    transition: height 0.5s ease 0s;
 }
 #fad-duration {
     margin-left: 10px;
@@ -392,41 +429,52 @@ body.video-full-screen.video-full-screen--hide-ui {
     ];
     updateStyle();
 
+    function displayUpdate() {
+        let updateText = react.createElement(
+            "p",
+            {
+                className: "fad-update",
+            },
+            `
+             This update brings:
+             `,
+            react.createElement(
+                "li",
+                {},
+                "Added volume bar: Now you can control volume from FAD, scroll or click on it to change the volume! (toggleable in the settings)"
+            ),
+            react.createElement("li", {}, "Fixed the color stuff, now back to original 6 choices and better picks (yay!)")
+        );
+        Spicetify.PopupModal.display({
+            title: "What's New with FullAppDisplayMod",
+            content: updateText,
+            isLarge: true,
+        });
+    }
+
+    if (CONFIG["version"] == "1.0") {
+        displayUpdate();
+        CONFIG["version"] = "1.1";
+        saveConfig();
+    }
+
     async function fetchColors(uri) {
         let colors = {};
-        if (spotifyVersion < 81) {
-            try {
-                colors = await Spicetify.colorExtractor(uri);
-            } catch {
-                colors = {
-                    DARK_VIBRANT: "#000000",
-                    DESATURATED: "#000000",
-                    LIGHT_VIBRANT: "#000000",
-                    PROMINENT: "#000000",
-                    VIBRANT: "#000000",
-                    VIBRANT_NON_ALARMING: "#000000",
-                };
+
+        try {
+            const body = await Spicetify.CosmosAsync.get(`wg://colorextractor/v1/extract-presets?uri=${uri}&format=json`);
+            for (const color of body.entries[0].color_swatches) {
+                colors[color.preset] = `#${color.color.toString(16).padStart(6, "0")}`;
             }
-        } else {
-            try {
-                const meta = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uri.split(":")[2]);
-                let imageUri = meta.album.images[0].url;
-                const colorResp = await Spicetify.CosmosAsync.get(
-                    `https://api-partner.spotify.com/pathfinder/v1/query?operationName=fetchExtractedColors&variables=%7B%22uris%22%3A%5B%22${imageUri}%22%5D%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22d7696dd106f3c84a1f3ca37225a1de292e66a2d5aced37a66632585eeb3bbbfa%22%7D%7D`
-                );
-                Object.keys(colorResp.data.extractedColors[0])
-                    .filter((key) => key.startsWith("color"))
-                    .forEach((key) => {
-                        colors[key] = colorResp.data.extractedColors[0][key].hex;
-                    });
-            } catch (err) {
-                console.log(err);
-                colors = {
-                    colorDark: "#000000",
-                    colorLight: "#000000",
-                    colorRaw: "#000000",
-                };
-            }
+        } catch {
+            colors = {
+                DARK_VIBRANT: "#000000",
+                DESATURATED: "#000000",
+                LIGHT_VIBRANT: "#000000",
+                PROMINENT: "#000000",
+                VIBRANT: "#000000",
+                VIBRANT_NON_ALARMING: "#000000",
+            };
         }
         return colors;
     }
@@ -500,6 +548,79 @@ body.video-full-screen.video-full-screen--hide-ui {
                 })
             ),
             react.createElement("span", { id: "fad-duration" }, Spicetify.Player.formatTime(duration))
+        );
+    };
+
+    // @ts-ignore
+    const VolumeBar = () => {
+        // @ts-ignore
+        const [value, setValue] = useState(Spicetify.Player.getVolume());
+        return react.createElement(
+            "div",
+            {
+                id: "fad-volume",
+                style: { top: `${(window.innerHeight - 256) / 2}px` },
+                onWheel: (event) => {
+                    let dir = event.deltaY < 0 ? 1 : -1;
+                    let temp = parseInt(document.querySelector("#fad-volbar-inner").style.height) / 2 + dir * 1;
+                    if (temp < 0) {
+                        temp = 0;
+                    } else if (temp > 100) {
+                        temp = 100;
+                    }
+                    Spicetify.Player.setVolume(temp / 100);
+                    document.querySelector("#fad-volbar-inner").style.height = `${2 * temp}px`;
+                },
+            },
+            react.createElement(
+                "div",
+                { id: "fad-volicon" },
+                react.createElement(ButtonIcon, {
+                    style: {
+                        marginLeft: "18px",
+                        backgroundColor: "transparent",
+                        border: "0",
+                        color: "white",
+                        padding: "0 5px",
+                        pointerEvents: "auto",
+                    },
+                    // @ts-ignore
+                    icon: Spicetify.Player.getMute() ? Spicetify.SVGIcons["volume-off"] : Spicetify.SVGIcons["volume"],
+                    onClick: () => {
+                        if (!Spicetify.Player.getMute()) {
+                            document.querySelector("#fad-volicon svg").innerHTML = Spicetify.SVGIcons["volume-off"];
+                            document.querySelector("#fad-volbar-inner").style.height = `0px`;
+                            Spicetify.Player.toggleMute();
+                        } else {
+                            Spicetify.Player.toggleMute();
+                            document.querySelector("#fad-volicon svg").innerHTML = Spicetify.SVGIcons["volume"];
+                            setTimeout(() => {
+                                document.querySelector("#fad-volbar-inner").style.height = `${Spicetify.Player.getVolume() * 200}px`;
+                            }, 200);
+                        }
+                    },
+                })
+            ),
+            react.createElement(
+                "div",
+                {
+                    id: "fad-volbar",
+                    onClick: (e) => {
+                        let temp = 200 - e.nativeEvent.layerY;
+                        if (temp < 0) {
+                            temp = 0;
+                        }
+                        Spicetify.Player.setVolume(temp / 200);
+                        document.querySelector("#fad-volbar-inner").style.height = `${temp}px`;
+                    },
+                },
+                react.createElement("div", {
+                    id: "fad-volbar-inner",
+                    style: {
+                        height: `${value * 200}px`,
+                    },
+                })
+            )
         );
     };
 
@@ -719,10 +840,13 @@ body.video-full-screen.video-full-screen--hide-ui {
         const [isShuffle, setShuffle] = useState(Spicetify.Player.getShuffle());
         const [isRepeat, setRepeat] = useState(Spicetify.Player.getRepeat());
         const [isHeart, setHeart] = useState(Spicetify.Player.getHeart());
+        const [isPodcast, setPodcast] = useState(Spicetify.URI.isEpisode(Spicetify.Player.data.track.uri));
         useEffect(() => {
             const update = ({ data }) => {
                 data.track.metadata["collection.in_collection"] == "true" ? setHeart(true) : setHeart(false);
 
+                setPodcast(Spicetify.URI.isEpisode(Spicetify.Player.data.track.uri));
+                // @ts-ignore
                 const state = Spicetify.Player.origin._state;
                 if (!state.restrictions?.canToggleShuffle) {
                     setShuffle(undefined);
@@ -732,6 +856,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                 }
             };
             Spicetify.Player.addEventListener("songchange", update);
+            // @ts-ignore
             return () => Spicetify.Player.removeEventListener("songchange", update);
         });
         return react.createElement(
@@ -748,12 +873,14 @@ body.video-full-screen.video-full-screen--hide-ui {
                 // @ts-ignore
                 className: isShuffle
                     ? "dot-after"
-                    : !Spicetify.Player.origin._state.restrictions?.canToggleShuffle || isShuffle == undefined
+                    : // @ts-ignore
+                    !Spicetify.Player.origin._state.restrictions?.canToggleShuffle || isShuffle == undefined
                     ? "crossed-out"
                     : "",
                 style: {
                     marginLeft: CONFIG.vertical ? "18px" : "",
                 },
+                // @ts-ignore
                 icon: Spicetify.SVGIcons["shuffle"],
                 onClick: () => {
                     Spicetify.Player.toggleShuffle();
@@ -764,11 +891,14 @@ body.video-full-screen.video-full-screen--hide-ui {
                 // @ts-ignore
                 className: isRepeat
                     ? "dot-after"
-                    : !Spicetify.Player.origin._state.restrictions?.canToggleRepeatContext ||
+                    : // @ts-ignore
+                    !Spicetify.Player.origin._state.restrictions?.canToggleRepeatContext ||
+                      // @ts-ignore
                       !Spicetify.Player.origin._state.restrictions?.canToggleRepeatTrack ||
                       isRepeat == undefined
                     ? "crossed-out"
                     : "",
+                // @ts-ignore
                 icon: Spicetify.SVGIcons[isRepeat == 2 ? "repeat-once" : "repeat"],
                 onClick: () => {
                     Spicetify.Player.toggleRepeat();
@@ -777,7 +907,9 @@ body.video-full-screen.video-full-screen--hide-ui {
             }),
             react.createElement(ButtonIcon, {
                 // @ts-ignore
-                icon: Spicetify.SVGIcons[isHeart ? "heart-active" : "heart"],
+                icon: isPodcast
+                    ? Spicetify.SVGIcons[isHeart ? "check-alt-fill" : "plus-alt"]
+                    : Spicetify.SVGIcons[isHeart ? "heart-active" : "heart"],
                 style: {
                     marginLeft: CONFIG.vertical || CONFIG.enableControl ? "auto" : "",
                     marginRight: !CONFIG.vertical && !CONFIG.enableControl ? "10px" : "",
@@ -792,6 +924,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     // @ts-ignore
                     icon: '<path d="M2 2v5l4.33-2.5L2 2zm0 12h14v-1H2v1zm0-4h14V9H2v1zm7-5v1h7V5H9z"></path>',
                     className: "fad-queue-button",
+                    // @ts-ignore
                     // @ts-ignore
                     onClick: async (e) => {
                         let ele = document.querySelector(".fad-queue-button");
@@ -1024,6 +1157,9 @@ body.video-full-screen.video-full-screen--hide-ui {
             const dim = width > height ? width : height;
 
             this.deets.style.filter = "invert(0)";
+            if (CONFIG.volumeBar) {
+                document.querySelector("#fad-volume").style.filter = "invert(0)";
+            }
 
             if (CONFIG.lyricsPlus) {
                 this.lyrics.style.setProperty("--lyrics-color-active", "#ffffff");
@@ -1079,6 +1215,10 @@ body.video-full-screen.video-full-screen--hide-ui {
 
             this.deets.style.filter = "invert(0)";
 
+            if (CONFIG.volumeBar) {
+                document.querySelector("#fad-volume").style.filter = "invert(0)";
+            }
+
             if (CONFIG.lyricsPlus) {
                 this.lyrics.style.setProperty("--lyrics-color-active", "#ffffff");
                 this.lyrics.style.setProperty("--lyrics-color-inactive", "#ffffff50");
@@ -1127,6 +1267,10 @@ body.video-full-screen.video-full-screen--hide-ui {
                 console.log(nextColor);
                 if (luma > 180) {
                     this.deets.style.filter = "invert(1)";
+
+                    if (CONFIG.volumeBar) {
+                        document.querySelector("#fad-volume").style.filter = "invert(1)";
+                    }
                     if (CONFIG.lyricsPlus) {
                         this.lyrics.style.setProperty("--lyrics-color-active", "#000000");
                         this.lyrics.style.setProperty("--lyrics-color-inactive", "#00000050");
@@ -1281,6 +1425,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                             )
                         )
                     ),
+                    CONFIG.volumeBar && react.createElement(VolumeBar),
                     CONFIG.lyricsPlus &&
                         react.createElement("div", {
                             id: "fad-lyrics-plus-container",
@@ -1356,9 +1501,11 @@ body.video-full-screen.video-full-screen--hide-ui {
     }
 
     function autoHideLyrics() {
+        // @ts-ignore
         if (!document.querySelector("#fad-lyrics-plus-container").innerText) {
             setTimeout(autoHideLyrics, 100);
         } else {
+            // @ts-ignore
             if (document.querySelector("#fad-lyrics-plus-container").innerText == "(• _ • )") {
                 isHidden = true;
                 updateStyle();
@@ -1476,6 +1623,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                         backgroundColor: CONFIG["color"][color],
                     },
                     // @ts-ignore
+                    // @ts-ignore
                     onMouseEnter: (e) => {
                         originalColor = CONFIG["colorChoice"];
                         CONFIG["colorChoice"] = color;
@@ -1484,12 +1632,14 @@ body.video-full-screen.video-full-screen--hide-ui {
                         updateVisual();
                     },
                     // @ts-ignore
+                    // @ts-ignore
                     onMouseLeave: (e) => {
                         CONFIG["colorChoice"] = originalColor;
                         // @ts-ignore
                         modal[0].style.opacity = 1;
                         updateVisual();
                     },
+                    // @ts-ignore
                     // @ts-ignore
                     onClick: (e) => {
                         CONFIG["colorChoice"] = color;
@@ -1529,27 +1679,17 @@ body.video-full-screen.video-full-screen--hide-ui {
 `,
             },
         });
-        let colorContainer =
-            spotifyVersion < 81
-                ? react.createElement(
-                      "div",
-                      null,
-                      style,
-                      react.createElement(colorRow, { name: "Dark Vibrant", color: "DARK_VIBRANT" }),
-                      react.createElement(colorRow, { name: "Desaturated", color: "DESATURATED" }),
-                      react.createElement(colorRow, { name: "Light Vibrant", color: "LIGHT_VIBRANT" }),
-                      react.createElement(colorRow, { name: "Prominent", color: "PROMINENT" }),
-                      react.createElement(colorRow, { name: "Vibrant", color: "VIBRANT" }),
-                      react.createElement(colorRow, { name: "Vibrant(NA)", color: "VIBRANT_NON_ALARMING" })
-                  )
-                : react.createElement(
-                      "div",
-                      null,
-                      style,
-                      react.createElement(colorRow, { name: "Dark Color", color: "colorDark" }),
-                      react.createElement(colorRow, { name: "Light Color", color: "colorLight" }),
-                      react.createElement(colorRow, { name: "Raw Color", color: "colorRaw" })
-                  );
+        let colorContainer = react.createElement(
+            "div",
+            null,
+            style,
+            react.createElement(colorRow, { name: "Dark Vibrant", color: "DARK_VIBRANT" }),
+            react.createElement(colorRow, { name: "Desaturated", color: "DESATURATED" }),
+            react.createElement(colorRow, { name: "Light Vibrant", color: "LIGHT_VIBRANT" }),
+            react.createElement(colorRow, { name: "Prominent", color: "PROMINENT" }),
+            react.createElement(colorRow, { name: "Vibrant", color: "VIBRANT" }),
+            react.createElement(colorRow, { name: "Vibrant(NA)", color: "VIBRANT_NON_ALARMING" })
+        );
         Spicetify.PopupModal.display({
             title: "Color Display (Hover to preview)",
             content: colorContainer,
@@ -1627,6 +1767,7 @@ select {
                 func: updateVisual,
             }),
             react.createElement(ConfigItem, { name: "Enable progress bar", field: "enableProgress", func: updateVisual }),
+            react.createElement(ConfigItem, { name: "Enable volume bar", field: "volumeBar", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Enable controls", field: "enableControl", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Enable extra controls", field: "enableExtraControl", func: updateVisual }),
             react.createElement(ConfigSelection, {
@@ -1655,7 +1796,6 @@ select {
                 react.createElement(ConfigItem, { name: "Enable gradient", field: "enableGrad", func: updateVisual }),
 
             CONFIG.enableDev &&
-                spotifyVersion < 81 &&
                 react.createElement(ConfigSelection, {
                     name: "Color Choice (Press F6 for colors)",
                     field: "colorChoice",
@@ -1668,19 +1808,6 @@ select {
                         VIBRANT_NON_ALARMING: "Vibrant(NA)",
                     },
                     def: "LIGHT_VIBRANT",
-                    func: updateVisual,
-                }),
-            CONFIG.enableDev &&
-                spotifyVersion >= 81 &&
-                react.createElement(ConfigSelection, {
-                    name: "Color Choice (Press F6 for colors)",
-                    field: "colorChoice",
-                    options: {
-                        colorDark: "Dark Color",
-                        colorLight: "Light Color",
-                        colorRaw: "Raw Color",
-                    },
-                    def: "colorLight",
                     func: updateVisual,
                 })
         );

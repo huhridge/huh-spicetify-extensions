@@ -1,7 +1,7 @@
 // @ts-check
 // NAME: Full App Display
 // AUTHOR: khanhas
-// VERSION: 1.0
+// VERSION: 1.2
 // DESCRIPTION: Fancy artwork and track status display.
 
 /// <reference path="../globals.d.ts" />
@@ -27,7 +27,7 @@
     }
 
     if (!CONFIG["version"]) {
-        CONFIG["version"] = "1.0";
+        CONFIG["version"] = "1.2";
         saveConfig();
     }
 
@@ -104,6 +104,7 @@
 }
 #fad-progress-inner {
     height: 100%;
+    transition: width 100ms ease;
     border-radius: 6px;
     background-color: #ffffff;
     box-shadow: 4px 0 12px rgba(0, 0, 0, 0.8) !important;
@@ -113,6 +114,10 @@
     height: 16rem;
     position: fixed;
     left: 1rem;
+    transition: opacity ease 350ms;
+}
+#fad-volume:hover {
+    opacity: 1 !important;
 }
 #fad-volicon {
     height: fit-content;
@@ -166,7 +171,7 @@ body.video-full-screen.video-full-screen--hide-ui {
     padding: 0 5px;
     pointer-events: auto;
 }
-#fad-controls button:hover, #fad-extracontrols button:hover{
+#fad-controls button:hover, #fad-extracontrols button:hover, #fad-volicon button:hover{
     transform: scale(1.1);
 }
 #fad-artist svg, #fad-album svg {
@@ -202,7 +207,7 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-upnext-details{
     margin-left: 15px;
-    margin-top: 8px;
+    align-self: center;
     font-size: 14.5px;
     display: flex;
     flex-direction: column;
@@ -438,12 +443,9 @@ body.video-full-screen.video-full-screen--hide-ui {
             `
              This update brings:
              `,
-            react.createElement(
-                "li",
-                {},
-                "Added volume bar: Now you can control volume from FAD, scroll or click on it to change the volume! (toggleable in the settings)"
-            ),
-            react.createElement("li", {}, "Fixed the color stuff, now back to original 6 choices and better picks (yay!)")
+            react.createElement("li", {}, "Added seekable progress bar: Now you can seek songs from FAD itself, click on it to seek!"),
+            react.createElement("li", {}, "Added show only on hover mode for volume bar (change in settings)"),
+            react.createElement("li", {}, "Bug Fixes: Reworked the upnext and queue function, to account for the scale.")
         );
         Spicetify.PopupModal.display({
             title: "What's New with FullAppDisplayMod",
@@ -452,9 +454,9 @@ body.video-full-screen.video-full-screen--hide-ui {
         });
     }
 
-    if (CONFIG["version"] == "1.0") {
+    if (CONFIG["version"] == "1.1") {
         displayUpdate();
-        CONFIG["version"] = "1.1";
+        CONFIG["version"] = "1.2";
         saveConfig();
     }
 
@@ -527,7 +529,9 @@ body.video-full-screen.video-full-screen--hide-ui {
     const ProgressBar = () => {
         const [value, setValue] = useState(Spicetify.Player.getProgress());
         useEffect(() => {
-            const update = ({ data }) => setValue(data);
+            const update = ({ data }) => {
+                setValue(data);
+            };
             Spicetify.Player.addEventListener("onprogress", update);
             // @ts-ignore
             return () => Spicetify.Player.removeEventListener("onprogress", update);
@@ -539,7 +543,19 @@ body.video-full-screen.video-full-screen--hide-ui {
             react.createElement("span", { id: "fad-elapsed" }, Spicetify.Player.formatTime(value)),
             react.createElement(
                 "div",
-                { id: "fad-progress" },
+                {
+                    id: "fad-progress",
+                    onClick: (e) => {
+                        e.persist();
+                        console.log(e);
+                        let coors = document.querySelector("#fad-progress").getBoundingClientRect();
+                        let temp = (e.screenX - coors.x) / coors.width;
+                        console.log(temp);
+                        Spicetify.Player.seek(temp);
+                        setTimeout(console.log(Spicetify.Player.getProgressPercent()), 200);
+                        document.querySelector("#fad-progress-inner").style.width = `${temp}%`;
+                    },
+                },
                 react.createElement("div", {
                     id: "fad-progress-inner",
                     style: {
@@ -555,11 +571,18 @@ body.video-full-screen.video-full-screen--hide-ui {
     const VolumeBar = () => {
         // @ts-ignore
         const [value, setValue] = useState(Spicetify.Player.getVolume());
+        let isHover = false;
+        if (CONFIG["volumeBar"] == "onlyHover") {
+            isHover = true;
+        }
         return react.createElement(
             "div",
             {
                 id: "fad-volume",
-                style: { top: `${(window.innerHeight - 256) / 2}px` },
+                style: {
+                    top: `${(window.innerHeight - 256) / 2}px`,
+                    opacity: isHover ? 0 : 1,
+                },
                 onWheel: (event) => {
                     let dir = event.deltaY < 0 ? 1 : -1;
                     let temp = parseInt(document.querySelector("#fad-volbar-inner").style.height) / 2 + dir * 1;
@@ -625,28 +648,24 @@ body.video-full-screen.video-full-screen--hide-ui {
     };
 
     const upNext = async ({ index, queue }) => {
-        let top,
-            left,
-            meta,
+        let meta,
             uri,
+            bottom = -100,
+            right = 0,
             color,
             context,
-            invert = false,
+            invertDetails = false,
+            invertWhole = false,
             isContext = false,
             isColor = false;
 
-        let deets = document.querySelector("#fad-controls");
+        let deets = document.querySelector("#fad-details");
         const coor = deets.getBoundingClientRect();
-        let scale = 1 + (CONFIG["scale"] - 1) / 2;
-        if (coor.bottom + 105 > window.innerHeight) {
-            top = window.innerHeight - 110;
-            left = coor.right + 175;
-        } else {
-            top = !CONFIG.vertical && CONFIG.enableExtraControl ? coor.bottom + 40 : coor.bottom + 20;
-            left = CONFIG.vertical || CONFIG.enableExtraControl ? coor.left + (coor.width / 2 - 199.5) : coor.left;
+        let scale = CONFIG["scale"];
+        if (coor.bottom + scale * 90 + 10 > window.innerHeight) {
+            bottom = bottom + (coor.bottom + 90 * scale + 10 - window.innerHeight) / scale + 10;
+            right = -409;
         }
-        top = top / scale;
-        left = left / scale;
 
         if (Spicetify.Player.getRepeat() == 2) {
             uri = Spicetify.Player.data.track.uri;
@@ -700,7 +719,10 @@ body.video-full-screen.video-full-screen--hide-ui {
                 parseInt(color.substring(3, 5), 16) * 0.7152 +
                 parseInt(color.substring(5, 7), 16) * 0.0722;
             if (luma > 180) {
-                invert = true;
+                invertDetails = true;
+            }
+            if (deets.style.filter == "invert(1)") {
+                invertWhole = true;
             }
         }
 
@@ -708,10 +730,9 @@ body.video-full-screen.video-full-screen--hide-ui {
             "div",
             {
                 id: "fad-upnext",
-                className: !queue ? "dont-scale" : "",
                 style: {
-                    top: queue ? "" : top,
-                    left: queue ? "" : left,
+                    bottom: queue ? "" : `${bottom}px`,
+                    right: queue ? "" : `${right}px`,
                     backgroundColor: isColor ? color : "",
                     backgroundImage: isColor ? "" : `url(${meta.image_url})`,
                     backgroundPosition: isColor ? "" : "center",
@@ -720,6 +741,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     border: isColor ? "" : "2px solid",
                     borderColor: isColor ? "" : "white",
                     clipPath: queue ? (index == 0 ? "inset(0px 0px 0px)" : "inset(90px 0px 0px)") : "",
+                    filter: invertWhole ? "invert(1)" : "invert(0)",
                 },
                 ref: (el) => !queue && el && el.style.setProperty("box-shadow", "0 0 8px rgb(0 0 0 / 30%)", "important"),
             },
@@ -737,7 +759,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                 "div",
                 {
                     id: "fad-upnext-details",
-                    style: { filter: invert ? "invert(1)" : "invert(0)" },
+                    style: { filter: invertDetails ? "invert(1)" : "invert(0)" },
                 },
                 react.createElement(
                     "p",
@@ -820,7 +842,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                     timer = setTimeout(async () => {
                         let cont = document.createElement("div");
                         cont.id = "fad-upnext-container";
-                        let fore = document.querySelector("#fad-foreground");
+                        let fore = document.querySelector("#fad-details");
                         fore.append(cont);
                         reactDOM.render(await upNext({ index: 0, queue: false }), cont);
                     }, 450);
@@ -950,8 +972,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                         }, 1000);
 
                         const next = await upNext({ index: 0, queue: false });
-                        const top = next.props.style.top;
-                        const left = next.props.style.left;
+                        const bottom = next.props.style.bottom;
+                        const right = next.props.style.right;
 
                         CONFIG["viewing"] = 0;
 
@@ -968,10 +990,9 @@ body.video-full-screen.video-full-screen--hide-ui {
                             "div",
                             {
                                 id: "scroll-queue",
-                                className: "dont-scale",
                                 style: {
-                                    top: top,
-                                    left: left,
+                                    bottom: bottom,
+                                    right: right,
                                     borderRadius: "10px",
                                     boxShadow: "0 0 8px rgb(0 0 0 / 30%)",
                                 },
@@ -1001,7 +1022,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                             },
                             tracks
                         );
-                        let fore = document.querySelector("#fad-foreground");
+                        let fore = document.querySelector("#fad-details");
                         let wrapper = document.createElement("div");
                         wrapper.id = "fad-queue-container";
                         fore.append(wrapper);
@@ -1157,7 +1178,7 @@ body.video-full-screen.video-full-screen--hide-ui {
             const dim = width > height ? width : height;
 
             this.deets.style.filter = "invert(0)";
-            if (CONFIG.volumeBar) {
+            if (!(CONFIG["volumeBar"] === "disable")) {
                 document.querySelector("#fad-volume").style.filter = "invert(0)";
             }
 
@@ -1215,7 +1236,7 @@ body.video-full-screen.video-full-screen--hide-ui {
 
             this.deets.style.filter = "invert(0)";
 
-            if (CONFIG.volumeBar) {
+            if (!(CONFIG["volumeBar"] === "disable")) {
                 document.querySelector("#fad-volume").style.filter = "invert(0)";
             }
 
@@ -1268,7 +1289,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                 if (luma > 180) {
                     this.deets.style.filter = "invert(1)";
 
-                    if (CONFIG.volumeBar) {
+                    if (!(CONFIG["volumeBar"] === "disable")) {
                         document.querySelector("#fad-volume").style.filter = "invert(1)";
                     }
                     if (CONFIG.lyricsPlus) {
@@ -1425,7 +1446,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                             )
                         )
                     ),
-                    CONFIG.volumeBar && react.createElement(VolumeBar),
+                    // @ts-ignore
+                    !(CONFIG["volumeBar"] === "disable") && react.createElement(VolumeBar),
                     CONFIG.lyricsPlus &&
                         react.createElement("div", {
                             id: "fad-lyrics-plus-container",
@@ -1767,7 +1789,16 @@ select {
                 func: updateVisual,
             }),
             react.createElement(ConfigItem, { name: "Enable progress bar", field: "enableProgress", func: updateVisual }),
-            react.createElement(ConfigItem, { name: "Enable volume bar", field: "volumeBar", func: updateVisual }),
+            react.createElement(ConfigSelection, {
+                name: "Enable volume bar",
+                field: "volumeBar",
+                options: {
+                    disable: "Disable",
+                    onlyHover: "Show on hover only",
+                    alwaysOn: "Show always",
+                },
+                func: updateVisual,
+            }),
             react.createElement(ConfigItem, { name: "Enable controls", field: "enableControl", func: updateVisual }),
             react.createElement(ConfigItem, { name: "Enable extra controls", field: "enableExtraControl", func: updateVisual }),
             react.createElement(ConfigSelection, {

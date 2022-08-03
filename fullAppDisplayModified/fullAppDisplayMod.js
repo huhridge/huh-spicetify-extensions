@@ -5,6 +5,7 @@
 // DESCRIPTION: Fancy artwork and track status display.
 
 /// <reference path="../globals.d.ts" />
+
 (function FullAppDisplay() {
     if (!Spicetify.Keyboard || !Spicetify.React || !Spicetify.ReactDOM || !Spicetify.Platform) {
         setTimeout(FullAppDisplay, 200);
@@ -570,11 +571,18 @@ body.video-full-screen.video-full-screen--hide-ui {
     // @ts-ignore
     const VolumeBar = () => {
         // @ts-ignore
-        const [value, setValue] = useState(Spicetify.Player.getVolume());
+        const [value, setValue] = useState(Spicetify.Platform.PlaybackAPI._volume);
         let isHover = false;
         if (CONFIG["volumeBar"] == "onlyHover") {
             isHover = true;
         }
+        useEffect(() => {
+            const update = ({ data }) => {
+                setValue(data.volume);
+            };
+            Spicetify.Platform.PlaybackAPI._events.addListener("volume", update);
+            return () => Spicetify.Platform.PlaybackAPI._events.removeListener("volume", update);
+        });
         return react.createElement(
             "div",
             {

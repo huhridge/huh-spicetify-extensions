@@ -283,7 +283,7 @@ body.video-full-screen.video-full-screen--hide-ui {
     max-width: 340px;
 }
 #fad-details {
-    padding-left: 50px;
+    padding-left: 40px;
     line-height: initial;
     max-width: 70%;
     color: #FFFFFF;
@@ -291,11 +291,11 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-title {
     font-size: 87px;
-    font-weight: var(--glue-font-weight-black);
+    font-weight: 900;
 }
 #fad-artist, #fad-album {
     font-size: 54px;
-    font-weight: var(--glue-font-weight-medium);
+    font-weight: 400;
 }
 #fad-artist svg, #fad-album svg {
     margin-right: 5px;
@@ -331,19 +331,20 @@ body.video-full-screen.video-full-screen--hide-ui {
     text-align: center;
 }
 #fad-details {
-    padding-top: 50px;
+    padding-top: 40px;
     line-height: initial;
     max-width: 70%;
     color: #FFFFFF;
     filter: invert(0);
 }
 #fad-title {
+    line-height: 1;
     font-size: 54px;
-    font-weight: var(--glue-font-weight-black);
+    font-weight: 900;
 }
 #fad-artist, #fad-album {
     font-size: 33px;
-    font-weight: var(--glue-font-weight-medium);
+    font-weight: 400;
 }
 #fad-artist svg, #fad-album svg {
     width: 25px;
@@ -398,7 +399,7 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-artist, #fad-album {
     font-size: 2.5vw;
-    font-weight: var(--glue-font-weight-medium);
+    font-weight: 400;
 }
 #fad-art {
     max-width: 210px;
@@ -410,7 +411,7 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-artist, #fad-album {
     font-size: 2.5vw;
-    font-weight: var(--glue-font-weight-medium);
+    font-weight: 400;
 }
         `,
     ];
@@ -1633,6 +1634,55 @@ body.video-full-screen.video-full-screen--hide-ui {
         );
     };
 
+    const ConfigHotkey = ({ name, field, def, onChange = () => {} }) => {
+        const [value, setValue] = useState(CONFIG[field] ?? def);
+        const [trap] = useState(new Spicetify.Mousetrap());
+
+        function record() {
+            trap.handleKey = (character, modifiers, e) => {
+                if (e.type == "keydown") {
+                    const sequence = [...new Set([...modifiers, character])];
+                    if (sequence.length === 1 && sequence[0] === "esc") {
+                        onChange("");
+                        setValue("");
+                        return;
+                    }
+                    setValue(sequence.join("+"));
+                }
+            };
+        }
+
+        function finishRecord() {
+            trap.handleKey = () => {};
+            onChange(value);
+        }
+
+        return react.createElement(
+            "div",
+            {
+                className: "setting-row",
+            },
+            react.createElement(
+                "label",
+                {
+                    className: "col description",
+                },
+                name
+            ),
+            react.createElement(
+                "div",
+                {
+                    className: "col action",
+                },
+                react.createElement("input", {
+                    value,
+                    onFocus: record,
+                    onBlur: finishRecord,
+                })
+            )
+        );
+    };
+
     const colorRow = ({ name, color }) => {
         let originalColor;
         const modal = document.getElementsByTagName("generic-modal");
@@ -1751,6 +1801,9 @@ body.video-full-screen.video-full-screen--hide-ui {
     float: right;
     text-align: right;
 }
+.setting-row .col.action input {
+    padding-left: 10px;
+}
 button.switch {
     align-items: center;
     border: 0px;
@@ -1828,6 +1881,16 @@ select {
                 react.createElement(ConfigItem, { name: "Vertical Monitor Mode", field: "verticalMonitor", func: updateStyle }),
             react.createElement(ConfigItem, { name: "Enable fullscreen", field: "enableFullscreen", func: toggleFullscreen }),
             react.createElement(ConfigItem, { name: "Enable song change animation", field: "enableFade", func: updateVisual }),
+            react.createElement(ConfigHotkey, {
+                name: "FAD hotkey: ",
+                field: "hotkey",
+                def: "alt+f",
+                onChange: (key) => {
+                    CONFIG["hotkey"] = key;
+                    saveConfig();
+                    Spicetify.Mousetrap.bind(key, toggleFad);
+                },
+            }),
             react.createElement(ConfigItem, { name: "Enable development features", field: "enableDev", func: openConfig }),
 
             CONFIG.enableDev &&
@@ -1864,6 +1927,6 @@ select {
         activate
     );
 
-    Spicetify.Mousetrap.bind("f11", toggleFad);
+    Spicetify.Mousetrap.bind(CONFIG["hotkey"] ?? "alt+f", toggleFad);
     Spicetify.Mousetrap.bind("f6", openColor);
 })();

@@ -442,6 +442,7 @@
                 className: "main-type-bass main-trackList-trackListHeaderRow",
                 style: {
                     fontSize: "30px",
+                    height: "100%",
                     lineHeight: "60px",
                     paddingLeft: "10px",
                     justifySelf: "flex-start",
@@ -612,6 +613,7 @@
         playContainer.classList.add("main-trackList-trackListHeaderRow");
         playContainer.style.display = "flex";
         playContainer.style.borderBottom = "1px solid rgba(255,255,255,.1)";
+        playContainer.style.height = "100%"
         section.append(playContainer);
 
         const playele1 = playlistInfo(meta1, true);
@@ -634,6 +636,7 @@
 
         let songHeader = document.createElement("div");
         songHeader.className = "main-trackList-trackListHeaderRow";
+        songHeader.style.height = "100%"
         songHeader.style.background = "var(--spice-main)";
         songHeader.style.borderBottom = "1px solid rgba(255,255,255,.1)";
         songHeader.style.marginBottom = "8px";

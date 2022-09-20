@@ -225,9 +225,11 @@
         // creating the heading
         let appearsIn = document.createElement("h1");
         appearsIn.className = "main-type-bass main-trackList-trackListHeaderRow";
+        appearsIn.style.height = "100%"
         appearsIn.style.fontSize = "48px";
         appearsIn.style.lineHeight = "60px";
         appearsIn.style.paddingLeft = "10px";
+        appearsIn.style.paddingTop = "10px";
         appearsIn.innerText = `Appears In ${playlistsFound.length}/${allPlaylists.length} of your playlists:`;
         section.appendChild(appearsIn); //adding it
         // modifying info card
@@ -271,6 +273,7 @@
         for (const playlist of playlistsFound) {
             let preElement = document.createElement("div");
             preElement.classList.add("main-trackList-trackListHeaderRow");
+            preElement.style.height = "100%"
             section.append(preElement);
 
             const playlist_card = react.createElement(playlistCard, { playlist: playlist });

@@ -1079,7 +1079,12 @@ body.video-full-screen.video-full-screen--hide-ui {
 
             if (!isLocalOrEpisode) {
                 const ximage = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uriFinal);
-                finImage = ximage.album.images[2].url;
+                let images = ximage.album.images;
+                for (const image of images) {
+                    if (image.height == 640) {
+                        finImage = image.url;
+                    }
+                }
                 updateStyle();
             } else {
                 finImage = meta.image_xlarge_url;

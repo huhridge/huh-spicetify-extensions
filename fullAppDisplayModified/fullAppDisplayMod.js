@@ -551,7 +551,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                         e.persist();
                         console.log(e);
                         let coors = document.querySelector("#fad-progress").getBoundingClientRect();
-                        let temp = (e.screenX - coors.x) / coors.width;
+                        let temp = (e.pageX - coors.x) / coors.width;
                         console.log(temp);
                         Spicetify.Player.seek(temp);
                         setTimeout(console.log(Spicetify.Player.getProgressPercent()), 200);

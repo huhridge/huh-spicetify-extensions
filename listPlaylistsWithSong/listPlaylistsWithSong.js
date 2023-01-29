@@ -188,30 +188,31 @@
 
         // getting song data to prepare elements
         const songmeta = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uris[0].split(":")[2]);
-        Spicetify.Platform.History.push(`/album/${songmeta.album.uri.split(":")[2]}`);
-        await delay(1100); // waiting to load.
+        Spicetify.Platform.History.push(`/album/${songmeta.album.uri.split(":")[2]}?highlight=${uris[0]}`);
+        await delay(2000); // waiting to load.
 
         // modifying album page and saving info card and song row
-        let songRow;
+        let songRow = document.querySelector(`[aria-selected="true"]`);
         let section = document.querySelector(`[data-testid="album-page"]`);
-        if (songmeta.album.total_tracks == 1) {
-            songRow = document.querySelector(`[aria-rowindex="2"]`).cloneNode(true);
-        } else {
-            songRow = document.querySelector(`[aria-rowindex="3"]`).cloneNode(true);
-            songRow.childNodes[0].childNodes[1].childNodes[0].childNodes[0].innerText = songmeta.name;
-            if (songmeta.artists.length > 1) {
-                let artists = "";
-                for (const artist of songmeta.artists) {
-                    artists = artists.concat(artist.name, ", ");
-                }
-                artists = artists.slice(0, -2);
-                if (songmeta.explicit) {
-                    songRow.childNodes[0].childNodes[1].childNodes[0].childNodes[2].innerHTML = artists;
-                } else {
-                    songRow.childNodes[0].childNodes[1].childNodes[0].childNodes[1].innerHTML = artists;
-                }
-            }
-        }
+
+        // if (songmeta.album.total_tracks == 1) {
+        //     songRow = document.querySelector(`[aria-rowindex="2"]`).cloneNode(true);
+        // } else {
+        //     songRow = document.querySelector(`[aria-rowindex="3"]`).cloneNode(true);
+        //     songRow.childNodes[0].childNodes[1].childNodes[0].childNodes[0].innerText = songmeta.name;
+        //     if (songmeta.artists.length > 1) {
+        //         let artists = "";
+        //         for (const artist of songmeta.artists) {
+        //             artists = artists.concat(artist.name, ", ");
+        //         }
+        //         artists = artists.slice(0, -2);
+        //         if (songmeta.explicit) {
+        //             songRow.childNodes[0].childNodes[1].childNodes[0].childNodes[2].innerHTML = artists;
+        //         } else {
+        //             songRow.childNodes[0].childNodes[1].childNodes[0].childNodes[1].innerHTML = artists;
+        //         }
+        //     }
+        // }
         let info = document.querySelector(`[data-testid="album-page"] > div`).cloneNode(true);
         info.classList.add("main-trackList-trackListHeaderRow");
         section.innerHTML = ""; //wiping all other elements
@@ -225,11 +226,10 @@
         // creating the heading
         let appearsIn = document.createElement("h1");
         appearsIn.className = "main-type-bass main-trackList-trackListHeaderRow";
-        appearsIn.style.height = "100%"
         appearsIn.style.fontSize = "48px";
         appearsIn.style.lineHeight = "60px";
         appearsIn.style.paddingLeft = "10px";
-        appearsIn.style.paddingTop = "10px";
+        appearsIn.style.height = "auto";
         appearsIn.innerText = `Appears In ${playlistsFound.length}/${allPlaylists.length} of your playlists:`;
         section.appendChild(appearsIn); //adding it
         // modifying info card
@@ -256,6 +256,7 @@
         songImage.width = 40;
         songImage.height = 40;
 
+        songRow.childNodes[0].classList.remove("main-trackList-selected");
         songRow.childNodes[0].style = "grid-template-columns: [index] 30px [first] 4fr [var1] 3fr [last] minmax(240px,2fr);";
         songRow.childNodes[0].childNodes[1].insertBefore(songImage, songRow.childNodes[0].childNodes[1].firstChild);
         songRow.childNodes[0].childNodes[2].childNodes[0].style.width = "fit-content";
@@ -273,7 +274,7 @@
         for (const playlist of playlistsFound) {
             let preElement = document.createElement("div");
             preElement.classList.add("main-trackList-trackListHeaderRow");
-            preElement.style.height = "100%"
+            preElement.style.height = "auto";
             section.append(preElement);
 
             const playlist_card = react.createElement(playlistCard, { playlist: playlist });

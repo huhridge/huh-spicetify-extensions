@@ -80,9 +80,9 @@
             case Spicetify.URI.Type.ALBUM:
                 tracks = await fetchAlbum(uri);
                 break;
-            // case Spicetify.URI.Type.COLLECTION:
-            //     tracks = await fetchCollection();
-            //     break;
+            case Spicetify.URI.Type.COLLECTION:
+                tracks = await fetchCollection();
+                break;
         }
         let skipData = JSON.parse(LocalStorage.get("skipData"));
         tracks = tracks.filter((item) => Boolean(skipData[item.uri]));
@@ -118,16 +118,16 @@
         }));
     };
 
-    // const fetchCollection = async () => {
-    //     const res = await Spicetify.CosmosAsync.get("sp://core-collection/unstable/@/list/tracks/all?responseFormat=protobufJson");
-    //     return res.item.map((item) => ({
-    //         uri: item.trackMetadata.link,
-    //         title: item.trackMetadata.name,
-    //         index: item.index + 1,
-    //         album: item.trackMetadata.album.name,
-    //         artists: item.trackMetadata.artist.map((item) => item.name).join(", "),
-    //     }));
-    // };
+    const fetchCollection = async () => {
+        const res = await Spicetify.CosmosAsync.get("sp://core-collection/unstable/@/list/tracks/all?responseFormat=protobufJson");
+        return res.item.map((item) => ({
+            uri: item.trackMetadata.link,
+            title: item.trackMetadata.name,
+            index: item.index + 1,
+            album: item.trackMetadata.album.name,
+            artists: item.trackMetadata.artist.map((item) => item.name).join(", "),
+        }));
+    };
 
     const fetchAlbum = async (uri) => {
         const arg = uri.split(":")[2];
@@ -311,6 +311,7 @@ td.auto-skip {
             case Spicetify.URI.Type.PLAYLIST:
             case Spicetify.URI.Type.PLAYLIST_V2:
             case Spicetify.URI.Type.ALBUM:
+            case Spicetify.URI.Type.COLLECTION:
                 await seeStats(Spicetify.Player.data.context_uri);
                 break;
             default:

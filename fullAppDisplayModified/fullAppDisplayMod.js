@@ -390,6 +390,8 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-lyrics-plus-container {
     width: 50vw;
+    display: flex;
+    justify-content: center;
 }
 `;
     const lyricsPlusStyleChoices = [

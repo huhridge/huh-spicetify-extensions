@@ -320,7 +320,11 @@ body.video-full-screen.video-full-screen--hide-ui {
 }
 #fad-elapsed {
     min-width: 52px;
-}`,
+}
+#fad-lyrics-plus-container {
+    display: none;
+}
+`,
         `
 #fad-art {
     width: calc(100vh - 400px);
@@ -381,17 +385,17 @@ body.video-full-screen.video-full-screen--hide-ui {
 
     const lyricsPlusBase = `
 #fad-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
 }
 #fad-foreground {
     padding: 0 50px 0 100px;
-    width: 50vw;
+    width: 100%;
 }
 #fad-lyrics-plus-container {
-    width: 50vw;
-    display: flex;
-    justify-content: center;
+    display: block;
+    width: 100%;
+    position: relative;
+    right: 0;
 }
 `;
     const lyricsPlusStyleChoices = [

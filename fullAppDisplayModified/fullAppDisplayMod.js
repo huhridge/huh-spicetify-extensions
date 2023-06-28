@@ -389,6 +389,7 @@ body.video-full-screen.video-full-screen--hide-ui {
     width: 50vw;
 }
 #fad-lyrics-plus-container {
+    position: relative;
     width: 50vw;
 }
 `;

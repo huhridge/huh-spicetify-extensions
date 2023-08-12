@@ -13,25 +13,20 @@
         return Locale.formatDate(albumDate);
     }
 
-    function delay(delayInms) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(2);
-            }, delayInms);
-        });
-    }
-
     function setDate(newDate) {
         const dateElement =
             document.querySelector(".main-entityHeader-divider.main-type-mesto") ??
             document.querySelector(".main-entityHeader-metaData span:nth-last-child(2)");
+        if (!dateElement) {
+            setTimeout(setDate, 100, newDate);
+            return;
+        }
         dateElement.textContent = newDate;
     }
 
     if (History.location.pathname.startsWith("/album/")) {
         const uri = History.location.pathname.split("/")[2];
         const newDate = await getAlbumDate(uri);
-        await delay(1000);
         setDate(newDate);
     }
 
@@ -39,7 +34,6 @@
         if (pathname.startsWith("/album/")) {
             const uri = pathname.split("/")[2];
             const newDate = await getAlbumDate(uri);
-            await delay(1000);
             setDate(newDate);
         }
     });

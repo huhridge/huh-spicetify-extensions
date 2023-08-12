@@ -1,16 +1,16 @@
 (async function fullAlbumDate() {
-    if (!Spicetify.Platform?.History || !Spicetify.CosmosAsync) {
+    if (!Spicetify.Platform?.History || !Spicetify.CosmosAsync || !Spicetify.Locale) {
         setTimeout(fullAlbumDate, 300);
         return;
     }
 
-    const { CosmosAsync } = Spicetify;
+    const { CosmosAsync, Locale } = Spicetify;
     const { History } = Spicetify.Platform;
 
     async function getAlbumDate(uri) {
         const albumInfo = await CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}`);
         const albumDate = new Date(albumInfo.release_date);
-        return albumDate.toLocaleString("default", { year: "numeric", month: "short", day: "numeric" });
+        return Locale.formatDate(albumDate);
     }
 
     function delay(delayInms) {

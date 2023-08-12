@@ -1,15 +1,16 @@
 (async function fullAlbumDate() {
-    const { Player, Menu, LocalStorage, Platform } = Spicetify;
-
-    async function getAlbumDate(uri) {
-        const albumInfo = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}`);
-        const albumDate = new Date(albumInfo.release_date);
-        return albumDate.toLocaleString("default", { year: "numeric", month: "short", day: "numeric" });
+    if (!Spicetify.Platform?.History || !Spicetify.CosmosAsync) {
+        setTimeout(fullAlbumDate, 300);
+        return;
     }
 
-    if (!(Player && Menu && LocalStorage && Platform)) {
-        setTimeout(fullAlbumDate, 1000);
-        return;
+    const { CosmosAsync } = Spicetify;
+    const { History } = Spicetify.Platform;
+
+    async function getAlbumDate(uri) {
+        const albumInfo = await CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}`);
+        const albumDate = new Date(albumInfo.release_date);
+        return albumDate.toLocaleString("default", { year: "numeric", month: "short", day: "numeric" });
     }
 
     function delay(delayInms) {
@@ -27,14 +28,14 @@
         dateElement.textContent = newDate;
     }
 
-    if (Platform.History.location.pathname.startsWith("/album/")) {
-        const uri = Platform.History.location.pathname.split("/")[2];
+    if (History.location.pathname.startsWith("/album/")) {
+        const uri = History.location.pathname.split("/")[2];
         const newDate = await getAlbumDate(uri);
         await delay(1000);
         setDate(newDate);
     }
 
-    Platform.History.listen(async ({ pathname }) => {
+    History.listen(async ({ pathname }) => {
         if (pathname.startsWith("/album/")) {
             const uri = pathname.split("/")[2];
             const newDate = await getAlbumDate(uri);

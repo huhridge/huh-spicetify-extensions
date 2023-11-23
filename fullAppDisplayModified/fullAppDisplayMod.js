@@ -678,8 +678,8 @@ body.video-full-screen.video-full-screen--hide-ui {
         }
 
         if (Spicetify.Player.getRepeat() == 2) {
-            uri = Spicetify.Player.data.track.uri;
-            meta = Spicetify.Player.data.track.metadata;
+            uri = Spicetify.Player.data.item.uri;
+            meta = Spicetify.Player.data.item.metadata;
         } else {
             // @ts-ignore
             uri = Spicetify.Queue.nextTracks[index].contextTrack.uri;
@@ -872,12 +872,12 @@ body.video-full-screen.video-full-screen--hide-ui {
         const [isShuffle, setShuffle] = useState(Spicetify.Player.getShuffle());
         const [isRepeat, setRepeat] = useState(Spicetify.Player.getRepeat());
         const [isHeart, setHeart] = useState(Spicetify.Player.getHeart());
-        const [isPodcast, setPodcast] = useState(Spicetify.URI.isEpisode(Spicetify.Player.data.track.uri));
+        const [isPodcast, setPodcast] = useState(Spicetify.URI.isEpisode(Spicetify.Player.data.item.uri));
         useEffect(() => {
             const update = ({ data }) => {
-                data.track.metadata["collection.in_collection"] == "true" ? setHeart(true) : setHeart(false);
+                data.item.metadata["collection.in_collection"] == "true" ? setHeart(true) : setHeart(false);
 
-                setPodcast(Spicetify.URI.isEpisode(Spicetify.Player.data.track.uri));
+                setPodcast(Spicetify.URI.isEpisode(Spicetify.Player.data.item.uri));
                 // @ts-ignore
                 const state = Spicetify.Player.origin._state;
                 if (!state.restrictions?.canToggleShuffle) {
@@ -1071,12 +1071,12 @@ body.video-full-screen.video-full-screen--hide-ui {
         }
 
         async fetchInfo() {
-            const meta = Spicetify.Player.data.track.metadata;
+            const meta = Spicetify.Player.data.item.metadata;
             const prevUri = nextUri;
-            nextUri = Spicetify.Player.data.track.uri;
+            nextUri = Spicetify.Player.data.item.uri;
             const uriFinal = nextUri.split(":")[2];
             let isLocalOrEpisode =
-                Spicetify.URI.isLocalTrack(Spicetify.Player.data.track.uri) || Spicetify.URI.isEpisode(Spicetify.Player.data.track.uri);
+                Spicetify.URI.isLocalTrack(Spicetify.Player.data.item.uri) || Spicetify.URI.isEpisode(Spicetify.Player.data.item.uri);
 
             if (!isLocalOrEpisode) {
                 const ximage = await Spicetify.CosmosAsync.get("https://api.spotify.com/v1/tracks/" + uriFinal);

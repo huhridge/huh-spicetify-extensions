@@ -45,7 +45,7 @@
         //auto skip
         let skipData = JSON.parse(LocalStorage.get("skipData"));
         let thresh = Number(Spicetify.LocalStorage.get("autoSkipThreshold"));
-        if (thresh > 0 && skipData[Spicetify.Player.data.track.uri] >= thresh) {
+        if (thresh > 0 && skipData[Spicetify.Player.data.item.uri] >= thresh) {
             Spicetify.Player.next();
             Spicetify.showNotification("The track was auto-skipped due to being skipped too many times.");
         }
@@ -58,7 +58,7 @@
             Spicetify.showNotification("Resetted all skip data!");
         } else if (mode === "current") {
             let skipData = JSON.parse(LocalStorage.get("skipData"));
-            skipData[Spicetify.Player.data.track.uri] = 0;
+            skipData[Spicetify.Player.data.item.uri] = 0;
             LocalStorage.set("skipData", JSON.stringify(skipData));
             Spicetify.showNotification("Resetted skip data for current track!");
         } else if (mode === "context") {

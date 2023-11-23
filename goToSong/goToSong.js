@@ -78,7 +78,7 @@
 
     async function scrollSong(playlisturi) {
         tracks = await Spicetify.Platform.PlaylistAPI.getContents(playlisturi)
-        curruri = Spicetify.Player.data.track.uri
+        curruri = Spicetify.Player.data.item.uri
         for (var i=0; i < tracks.items.length; i++){
             if (tracks.items[i].uri == curruri){
                 break;

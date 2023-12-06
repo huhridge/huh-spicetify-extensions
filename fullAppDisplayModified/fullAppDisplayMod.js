@@ -408,6 +408,9 @@ body.video-full-screen.video-full-screen--hide-ui {
     position: relative;
     width: 50vw;
 }
+.lyrics-lyricsContainer-LyricsContainer.fad-enabled .lyrics-config-button-container {
+    display: none;
+}
 `;
     const lyricsPlusStyleChoices = [
         `
@@ -1160,6 +1163,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                 });
                 if (CONFIG["optionBackground"] === "colorText" && !isLocalOrEpisode) {
                     this.animateCanvasColor(prevUri, prevUri);
+                } else if (CONFIG["optionBackground"] === "static" && !isLocalOrEpisode) {
+                    this.animateCanvasColor(prevUri, prevUri, true);
                 } else if (CONFIG["optionBackground"] === "albumart") {
                     this.animateCanvas(this.currTrackImg, this.currTrackImg);
                 }
@@ -1179,6 +1184,8 @@ body.video-full-screen.video-full-screen--hide-ui {
                 const bgImage = this.currTrackImg.src;
                 if (CONFIG["optionBackground"] === "colorText" && !isLocalOrEpisode) {
                     this.animateCanvasColor(prevUri, nextUri);
+                } else if (CONFIG["optionBackground"] === "static" && !isLocalOrEpisode) {
+                    this.animateCanvasColor(prevUri, nextUri, true);
                 } else if (CONFIG["optionBackground"] === "albumart") {
                     this.animateCanvas(previousImg, this.currTrackImg);
                 }
@@ -1254,17 +1261,28 @@ body.video-full-screen.video-full-screen--hide-ui {
             requestAnimationFrame(animate);
         }
 
-        async animateCanvasColor(prevUri, nextUri) {
+        async animateCanvasColor(prevUri, nextUri, isStatic = false) {
+            const { innerWidth: width, innerHeight: height } = window;
+            const ctx = this.back.getContext("2d");
+
+            if (isStatic) {
+                if (ctx.fillStyle == CONFIG["staticColor"]) {
+                    return;
+                } else {
+                    ctx.filter = "brightness(1)";
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = CONFIG["staticColor"];
+                    ctx.fillRect(0, 0, width, height);
+                    return;
+                }
+            }
+
             prevColor = await fetchColors(prevUri);
-            console.log(prevColor);
             nextColor = await fetchColors(nextUri);
 
-            const { innerWidth: width, innerHeight: height } = window;
             this.back.width = width;
             this.back.height = height;
-
-            const ctx = this.back.getContext("2d");
-            ctx.imageSmoothingEnabled = false;
 
             CONFIG["color"] = nextColor;
             saveConfig();
@@ -1280,57 +1298,23 @@ body.video-full-screen.video-full-screen--hide-ui {
                 this.lyrics.style.setProperty("--lyrics-color-inactive", "#ffffff50");
             }
 
-            if (CONFIG.enableGrad) {
-                let colors = new Set();
-                Object.values(prevColor).forEach(colors.add, colors);
-                let colorsarr = [...colors].sort(function (hex1, hex2) {
-                    return lightnessColor(hex2) - lightnessColor(hex1);
-                });
-                prevColor = ctx.createLinearGradient(0, 0, width, 0);
+            prevColor = prevColor[CONFIG["colorChoice"]];
+            nextColor = nextColor[CONFIG["colorChoice"]];
+            const luma =
+                parseInt(nextColor.substring(1, 3), 16) * 0.2126 +
+                parseInt(nextColor.substring(3, 5), 16) * 0.7152 +
+                parseInt(nextColor.substring(5, 7), 16) * 0.0722;
 
-                if (colorsarr.length < 3) {
-                    prevColor.addColorStop(0, colorsarr[0]);
-                    prevColor.addColorStop(1, colorsarr[1] ?? colorsarr[0]);
-                } else {
-                    prevColor.addColorStop(0, colorsarr[0]);
-                    prevColor.addColorStop(0.5, colorsarr[1] ?? colorsarr[0]);
-                    prevColor.addColorStop(1, colorsarr[2] ?? colorsarr[1] ?? colorsarr[0]);
+            console.log(nextColor);
+            if (luma > 180) {
+                this.deets.style.filter = "invert(1)";
+
+                if (!(CONFIG["volumeBar"] === "disable")) {
+                    document.querySelector("#fad-volume").style.filter = "invert(1)";
                 }
-
-                colors = new Set();
-                Object.values(nextColor).forEach(colors.add, colors);
-                colorsarr = [...colors].sort(function (hex1, hex2) {
-                    return lightnessColor(hex2) - lightnessColor(hex1);
-                });
-                nextColor = ctx.createLinearGradient(0, 0, width, 0);
-
-                if (colorsarr.length < 3) {
-                    nextColor.addColorStop(0, colorsarr[0]);
-                    nextColor.addColorStop(1, colorsarr[1] ?? colorsarr[0]);
-                } else {
-                    nextColor.addColorStop(0, colorsarr[0]);
-                    nextColor.addColorStop(0.5, colorsarr[1] ?? colorsarr[0]);
-                    nextColor.addColorStop(1, colorsarr[2] ?? colorsarr[1] ?? colorsarr[0]);
-                }
-            } else {
-                prevColor = prevColor[CONFIG["colorChoice"]];
-                nextColor = nextColor[CONFIG["colorChoice"]];
-                const luma =
-                    parseInt(nextColor.substring(1, 3), 16) * 0.2126 +
-                    parseInt(nextColor.substring(3, 5), 16) * 0.7152 +
-                    parseInt(nextColor.substring(5, 7), 16) * 0.0722;
-
-                console.log(nextColor);
-                if (luma > 180) {
-                    this.deets.style.filter = "invert(1)";
-
-                    if (!(CONFIG["volumeBar"] === "disable")) {
-                        document.querySelector("#fad-volume").style.filter = "invert(1)";
-                    }
-                    if (CONFIG.lyricsPlus) {
-                        this.lyrics.style.setProperty("--lyrics-color-active", "#000000");
-                        this.lyrics.style.setProperty("--lyrics-color-inactive", "#00000050");
-                    }
+                if (CONFIG.lyricsPlus) {
+                    this.lyrics.style.setProperty("--lyrics-color-active", "#000000");
+                    this.lyrics.style.setProperty("--lyrics-color-inactive", "#00000050");
                 }
             }
 
@@ -1705,6 +1689,30 @@ body.video-full-screen.video-full-screen--hide-ui {
         );
     };
 
+    const ConfigInput = ({ name, field, func, isColor = false }) => {
+        const [value, setValue] = useState(CONFIG[field]);
+        return react.createElement(
+            "div",
+            { className: "setting-row" },
+            react.createElement("label", { className: "col description" }, name),
+            react.createElement(
+                "div",
+                { className: "col action" },
+                react.createElement("input", {
+                    type: isColor ? "color" : "",
+                    value,
+                    className: "input",
+                    onChange: (e) => {
+                        setValue(e.target.value);
+                        CONFIG[field] = e.target.value;
+                        saveConfig();
+                        func();
+                    },
+                })
+            )
+        );
+    };
+
     const ConfigHotkey = ({ name, field, def, onChange = () => {} }) => {
         const [value, setValue] = useState(CONFIG[field] ?? def);
         const [trap] = useState(new Spicetify.Mousetrap());
@@ -1837,7 +1845,6 @@ body.video-full-screen.video-full-screen--hide-ui {
             react.createElement(colorRow, { name: "Dark Vibrant", color: "DARK_VIBRANT" }),
             react.createElement(colorRow, { name: "Desaturated", color: "DESATURATED" }),
             react.createElement(colorRow, { name: "Light Vibrant", color: "LIGHT_VIBRANT" }),
-            react.createElement(colorRow, { name: "Prominent", color: "PROMINENT" }),
             react.createElement(colorRow, { name: "Vibrant", color: "VIBRANT" }),
             react.createElement(colorRow, { name: "Vibrant(NA)", color: "VIBRANT_NON_ALARMING" })
         );
@@ -1919,10 +1926,25 @@ select {
                 options: {
                     albumart: "Album Art",
                     colorText: "Colorful background",
+                    static: "Static Color",
                     // grad: "Gradient",
                 },
                 func: updateVisual,
             }),
+            CONFIG["optionBackground"] == "static" &&
+                react.createElement(ConfigInput, {
+                    name: "Select static color:",
+                    field: "staticColor",
+                    func: () => {
+                        const ctx = document.getElementById("fad-background")?.getContext("2d");
+                        ctx.filter = "brightness(1)";
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.globalAlpha = 1;
+                        ctx.fillStyle = CONFIG["staticColor"];
+                        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+                    },
+                    isColor: true,
+                }),
             react.createElement(ConfigItem, { name: "Enable progress bar", field: "enableProgress", func: updateVisual }),
             react.createElement(ConfigSelection, {
                 name: "Enable volume bar",
@@ -1968,10 +1990,6 @@ select {
             react.createElement(ConfigItem, { name: "Enable development features", field: "enableDev", func: openConfig }),
 
             CONFIG.enableDev &&
-                CONFIG["optionBackground"] == "colorText" &&
-                react.createElement(ConfigItem, { name: "Enable gradient", field: "enableGrad", func: updateVisual }),
-
-            CONFIG.enableDev &&
                 react.createElement(ConfigSelection, {
                     name: "Color Choice (Press F6 for colors)",
                     field: "colorChoice",
@@ -1979,7 +1997,6 @@ select {
                         DARK_VIBRANT: "Dark Vibrant",
                         DESATURATED: "Desaturated",
                         LIGHT_VIBRANT: "Light Vibrant",
-                        PROMINENT: "Prominent",
                         VIBRANT: "Vibrant",
                         VIBRANT_NON_ALARMING: "Vibrant(NA)",
                     },

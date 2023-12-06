@@ -10,7 +10,7 @@
     async function getAlbumDate(uri) {
         const albumInfo = await CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}`);
         const albumDate = new Date(albumInfo.release_date);
-        return Locale.formatDate(albumDate);
+        return Locale.formatRelativeTime( albumDate );
     }
 
     function replaceDate(newDate) {

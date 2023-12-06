@@ -255,6 +255,13 @@ body.video-full-screen.video-full-screen--hide-ui {
     width: 8px;
 }
 
+.fad-grad-image{
+    position: absolute;
+    filter: blur(40px) brightness(0.60);
+    border-radius: 100em;
+    animation: rotategrad 50s linear infinite 1s;
+}
+
 @keyframes textchange {
     0%{
         opacity: 0;
@@ -269,6 +276,15 @@ body.video-full-screen.video-full-screen--hide-ui {
         opacity: 0.9;
     }
   }
+
+@keyframes rotategrad {
+    0% {
+        transform: rotate(18deg);
+    }
+    100% {
+        transform: rotate(378deg);
+    }
+}
 `;
 
     const styleChoices = [
@@ -430,8 +446,11 @@ body.video-full-screen.video-full-screen--hide-ui {
     padding: 0 50px 0;
 }
 .lyrics-lyricsContainer-LyricsContainer.fad-enabled {
-    height: 150vh;
+    height: 50vh;
     --lyrics-align-text: center !important;
+}
+#fad-volume {
+    top: 15vh;
 }
         `,
     ];
@@ -695,9 +714,9 @@ body.video-full-screen.video-full-screen--hide-ui {
         //@ts-ignore
         if (Spicetify.Queue.nextTracks[index].provider == "context") {
             isContext = true;
-            context = Spicetify.Player.data.context_metadata.context_description;
+            context = Spicetify.Player.data.context.metadata.context_description;
             if (!context) {
-                const uriObj = Spicetify.URI.fromString(Spicetify.Player.data.context_uri);
+                const uriObj = Spicetify.URI.fromString(Spicetify.Player.data.context.uri);
                 switch (uriObj.type) {
                     case Spicetify.URI.Type.SEARCH:
                         context = `Search`;
@@ -826,7 +845,7 @@ body.video-full-screen.video-full-screen--hide-ui {
         const [value, setValue] = useState(Spicetify.Player.isPlaying());
         let timer;
         useEffect(() => {
-            const update = ({ data }) => setValue(!data.is_paused);
+            const update = () => setValue(Spicetify.Player.isPlaying());
             Spicetify.Player.addEventListener("onplaypause", update);
             // @ts-ignore
             return () => Spicetify.Player.removeEventListener("onplaypause", update);
@@ -1141,7 +1160,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                 });
                 if (CONFIG["optionBackground"] === "colorText" && !isLocalOrEpisode) {
                     this.animateCanvasColor(prevUri, prevUri);
-                } else {
+                } else if (CONFIG["optionBackground"] === "albumart") {
                     this.animateCanvas(this.currTrackImg, this.currTrackImg);
                 }
                 return;
@@ -1157,10 +1176,10 @@ body.video-full-screen.video-full-screen--hide-ui {
             const previousImg = this.currTrackImg.cloneNode();
             this.currTrackImg.src = finImage;
             this.currTrackImg.onload = () => {
-                const bgImage = `url("${this.currTrackImg.src}")`;
+                const bgImage = this.currTrackImg.src;
                 if (CONFIG["optionBackground"] === "colorText" && !isLocalOrEpisode) {
                     this.animateCanvasColor(prevUri, nextUri);
-                } else {
+                } else if (CONFIG["optionBackground"] === "albumart") {
                     this.animateCanvas(previousImg, this.currTrackImg);
                 }
                 if (CONFIG.enableFade) {
@@ -1237,6 +1256,7 @@ body.video-full-screen.video-full-screen--hide-ui {
 
         async animateCanvasColor(prevUri, nextUri) {
             prevColor = await fetchColors(prevUri);
+            console.log(prevColor);
             nextColor = await fetchColors(nextUri);
 
             const { innerWidth: width, innerHeight: height } = window;
@@ -1394,10 +1414,49 @@ body.video-full-screen.video-full-screen--hide-ui {
                     onDoubleClick: deactivate,
                     onContextMenu: openConfig,
                 },
-                react.createElement("canvas", {
-                    id: "fad-background",
-                    ref: (el) => (this.back = el),
-                }),
+                !(CONFIG["optionBackground"] === "grad") &&
+                    react.createElement("canvas", {
+                        id: "fad-background",
+                        ref: (el) => (this.back = el),
+                    }),
+                CONFIG["optionBackground"] === "grad" &&
+                    react.createElement(
+                        "div",
+                        { id: "fad-gradient-background" },
+                        react.createElement("img", {
+                            src: this.state.cover,
+                            className: "fad-grad-image",
+                            style: {
+                                right: "-15%",
+                                top: "-20%",
+                                zIndex: 10,
+                                transform: "scale(2)",
+                            },
+                        }),
+                        react.createElement("img", {
+                            src: this.state.cover,
+                            className: "fad-grad-image",
+                            style: {
+                                left: "-5%",
+                                bottom: "-10%",
+                                transform: "scale(1.5)",
+                                zIndex: 1,
+                                animationDirection: "reverse",
+                            },
+                        }),
+                        react.createElement("img", {
+                            src: this.state.cover,
+                            className: "fad-grad-image",
+                            style: {
+                                width: "200%",
+                                right: "-50%",
+                                top: "-33%",
+                                filter: "blur(69px) brightness(0.6)",
+                                zIndex: 0,
+                                animationDirection: "reverse",
+                            },
+                        })
+                    ),
                 react.createElement("div", { id: "fad-header" }),
                 react.createElement(
                     "div",
@@ -1408,6 +1467,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                             id: "fad-foreground",
                             style: {
                                 "--fad-scale": CONFIG["scale"] || 1,
+                                zIndex: 20,
                             },
                             ref: (el) => {
                                 if (!el) return;
@@ -1423,7 +1483,7 @@ body.video-full-screen.video-full-screen--hide-ui {
                                     id: "fad-art-image",
                                     className: CONFIG.enableFade && "fad-background-fade",
                                     style: {
-                                        backgroundImage: this.state.cover,
+                                        backgroundImage: `url("${this.state.cover}")`,
                                     },
                                 },
                                 react.createElement("div", { id: "fad-art-inner" })
@@ -1859,6 +1919,7 @@ select {
                 options: {
                     albumart: "Album Art",
                     colorText: "Colorful background",
+                    // grad: "Gradient",
                 },
                 func: updateVisual,
             }),

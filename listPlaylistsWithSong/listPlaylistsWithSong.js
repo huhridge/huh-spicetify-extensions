@@ -27,7 +27,7 @@
         let playlists = [];
         for (const playlist of folder) {
             if (playlist.type == "playlist") {
-                if ((playlist.isCollaborative || playlist.isOwnedBySelf) && playlist.totalLength > 0) {
+                if ((playlist.isCollaborative || playlist.isOwnedBySelf || playlist.canAdd) && playlist.totalLength > 0) {
                     let image;
                     try {
                         image = !playlist.images[0]

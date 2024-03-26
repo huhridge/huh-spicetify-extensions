@@ -40,7 +40,7 @@
                         uri: playlist.uri,
                         title: playlist.name,
                         desc: playlist.description,
-                        isCollab: playlist.isCollaborative,
+                        isCollab: playlist.isCollaborative || playlist.canAdd,
                         noOfSongs: playlist.totalLength,
                         created: playlist.addedAt.toLocaleString("default", { year: "numeric", month: "short", day: "numeric" }),
                         image: image,
@@ -58,7 +58,7 @@
         const userContents = await Spicetify.Platform.RootlistAPI.getContents();
         for (const playlist of userContents.items) {
             if (playlist.type == "playlist") {
-                if ((playlist.isCollaborative || playlist.isOwnedBySelf) && playlist.totalLength > 0) {
+                if ((playlist.isCollaborative || playlist.isOwnedBySelf || playlist.canAdd) && playlist.totalLength > 0) {
                     let image;
                     try {
                         image = !playlist.images[0]
@@ -71,7 +71,7 @@
                         uri: playlist.uri,
                         title: playlist.name,
                         desc: playlist.description,
-                        isCollab: playlist.isCollaborative,
+                        isCollab: playlist.isCollaborative || playlist.canAdd,
                         noOfSongs: playlist.totalLength,
                         created: playlist.addedAt.toLocaleString("default", { year: "numeric", month: "short", day: "numeric" }),
                         image: image,

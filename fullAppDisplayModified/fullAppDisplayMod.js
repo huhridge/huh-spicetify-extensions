@@ -489,7 +489,7 @@ body.video-full-screen.video-full-screen--hide-ui {
         let colors = {};
 
         try {
-            const body = await Spicetify.CosmosAsync.get(`wg://colorextractor/v1/extract-presets?uri=${uri}&format=json`);
+            const body = await Spicetify.CosmosAsync.get(`https://spclient.wg.spotify.com/colorextractor/v1/extract-presets?uri=${uri}&format=json`);
             for (const color of body.entries[0].color_swatches) {
                 colors[color.preset] = `#${color.color.toString(16).padStart(6, "0")}`;
             }

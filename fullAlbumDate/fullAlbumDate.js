@@ -16,7 +16,7 @@
     function replaceDate(newDate) {
         const dateElement =
             document.querySelector(".main-entityHeader-divider.main-type-mesto") ??
-            document.querySelector(".main-entityHeader-metaData span:nth-last-child(2)");
+            document.querySelector(".main-entityHeader-headerText > div > span:nth-last-child(3)");
         if (!dateElement) {
             setTimeout(replaceDate, 100, newDate);
             return;

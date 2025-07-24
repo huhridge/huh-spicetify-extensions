@@ -725,13 +725,10 @@
     }
 
     async function convertToPlaylist() {
-        let songUris = [];
-        for (const track of renderedTracks) {
-            if (!track) {
-                continue;
-            }
-            songUris.push(track.uri);
-        }
+        let songUris = renderedTracks
+            .filter(track => track) // Ensure no null tracks
+            .map(track => track.uri);
+
         let playname;
         if (LocalStorage.get("spicetify-intermode") == "Intersect") {
             playname = `${name1} ∩ ${name2}`;
@@ -742,8 +739,19 @@
                 playname = `${name2} ∅ ${name1}`;
             }
         }
-        let uri = await Spicetify.Platform.RootlistAPI.createPlaylist(playname);
-        uri = uri.split(":")[2];
+
+        const response = await Spicetify.CosmosAsync.post(
+            "https://api.spotify.com/v1/me/playlists", {
+                name: playname,
+                public: false
+            }
+        );
+
+        if (!response || !response.id) {
+            Spicetify.showNotification("Failed to create playlist.");
+            return;
+        }
+        const uri = response.id
         await delay(100);
         while (songUris.length) {
             const b = songUris.splice(0, 100);

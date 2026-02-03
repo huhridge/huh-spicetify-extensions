@@ -535,14 +535,6 @@ body.video-full-screen.video-full-screen--hide-ui {
     return colors;
   }
 
-  function lightnessColor(hex) {
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    let r = parseInt(result[1], 16);
-    let g = parseInt(result[2], 16);
-    let b = parseInt(result[3], 16);
-    return (Math.max(r, g, b) + Math.min(r, g, b)) / 2;
-  }
-
   const DisplayIcon = ({ icon, size }) => {
     return react.createElement("svg", {
       width: size,
@@ -596,7 +588,7 @@ body.video-full-screen.video-full-screen--hide-ui {
       Spicetify.Player.addEventListener("onprogress", update);
       // @ts-ignore
       return () => Spicetify.Player.removeEventListener("onprogress", update);
-    });
+    }, []);
     const duration = Spicetify.Platform.PlayerAPI._state.duration;
     return react.createElement(
       "div",
@@ -612,16 +604,16 @@ body.video-full-screen.video-full-screen--hide-ui {
           id: "fad-progress",
           onClick: (e) => {
             e.persist();
-            console.log(e);
-            let coors = document
+            const coors = document
               .querySelector("#fad-progress")
               .getBoundingClientRect();
-            let temp = (e.pageX - coors.x) / coors.width;
-            console.log(temp);
-            Spicetify.Player.seek(temp);
-            setTimeout(console.log(Spicetify.Player.getProgressPercent()), 200);
+            let fraction = (e.pageX - coors.x) / coors.width;
+            // Clamp fraction to [0, 1]
+            fraction = Math.max(0, Math.min(1, fraction));
+            const newPosition = duration * fraction;
+            Spicetify.Player.seek(newPosition);
             document.querySelector("#fad-progress-inner").style.width =
-              `${temp}%`;
+              fraction * 100 + "%";
           },
         },
         react.createElement("div", {
@@ -1031,8 +1023,10 @@ body.video-full-screen.video-full-screen--hide-ui {
         // @ts-ignore
         icon: Spicetify.SVGIcons["shuffle"],
         onClick: () => {
-          Spicetify.Player.toggleShuffle();
-          setShuffle(!isShuffle);
+          if (isShuffle !== undefined) {
+            Spicetify.Player.toggleShuffle();
+            setShuffle(!isShuffle);
+          }
         },
       }),
       react.createElement(ButtonIcon, {
@@ -1051,8 +1045,10 @@ body.video-full-screen.video-full-screen--hide-ui {
         // @ts-ignore
         icon: Spicetify.SVGIcons[isRepeat == 2 ? "repeat-once" : "repeat"],
         onClick: () => {
-          Spicetify.Player.toggleRepeat();
-          setRepeat((isRepeat + 1) % 3);
+          if (isRepeat !== undefined) {
+            Spicetify.Player.toggleRepeat();
+            setRepeat((isRepeat + 1) % 3);
+          }
         },
       }),
       react.createElement(ButtonIcon, {
@@ -1468,7 +1464,6 @@ body.video-full-screen.video-full-screen--hide-ui {
         parseInt(nextColor.substring(3, 5), 16) * 0.7152 +
         parseInt(nextColor.substring(5, 7), 16) * 0.0722;
 
-      console.log(nextColor);
       if (luma > 180) {
         this.deets.style.filter = "invert(1)";
 
@@ -1774,15 +1769,13 @@ body.video-full-screen.video-full-screen--hide-ui {
   }
 
   function autoHideLyrics() {
+    const container = document.querySelector("#fad-lyrics-plus-container");
     // @ts-ignore
-    if (!document.querySelector("#fad-lyrics-plus-container").innerText) {
+    if (!container || !container.innerText) {
       setTimeout(autoHideLyrics, 100);
     } else {
       // @ts-ignore
-      if (
-        document.querySelector("#fad-lyrics-plus-container").innerText ==
-        "(• _ • )"
-      ) {
+      if (container.innerText == "(• _ • )") {
         isHidden = true;
         updateStyle();
       }
@@ -1795,9 +1788,9 @@ body.video-full-screen.video-full-screen--hide-ui {
       if (lastApp !== "/lyrics-plus") {
         Spicetify.Platform.History.push("/lyrics-plus");
       }
+      autoHideLyrics();
     }
     window.dispatchEvent(new Event("fad-request"));
-    autoHideLyrics();
   }
 
   function getConfig() {
@@ -2283,6 +2276,7 @@ select {
       "main-globalNav-navLink",
       "main-globalNav-link-icon",
       "custom-navlink",
+      "fad-navlink",
     );
 
     const innerBtn = fadButton.element.querySelector("button");
@@ -2298,7 +2292,14 @@ select {
     }
 
     // Logic to move the button to the correct container and copy styles
-    const observer = new MutationObserver(() => {
+
+    const observer = new MutationObserver((mutations) => {
+      // Basic check to see if relevant nodes were added/removed to avoid excessive querySelector calls
+      const shouldUpdate = mutations.some(
+        (m) => m.addedNodes.length > 0 || m.removedNodes.length > 0,
+      );
+      if (!shouldUpdate && document.body.contains(fadButton.element)) return;
+
       const marketplaceBtn = document.querySelector(
         '[aria-label="Marketplace"]',
       );
@@ -2311,7 +2312,7 @@ select {
 
         // Copy classes from the sibling to ensure exact styling match
         // We typically want to copy the classes to the INNER button.
-        if (innerBtn) {
+        if (innerBtn && innerBtn.className !== targetSibling.className) {
           innerBtn.className = targetSibling.className;
           // Ensure the specific FAD aria-label remains (it's an attribute, not class, so it's safe)
         }
@@ -2338,8 +2339,8 @@ select {
   // Inject CSS to fix button shape persistence, spacing, and remove hover scaling
   const fadStyle = document.createElement("style");
   fadStyle.innerHTML = `
-        /* Enforce circular shape and spacing on Full App Display button */
-        .main-globalNav-historyButtons .main-globalNav-navLink {
+        /* Enforce circular shape and spacing on Full App Display button unique wrapper */
+        .main-globalNav-historyButtons .main-globalNav-navLink.fad-navlink {
             aspect-ratio: 1 / 1 !important;
             border-radius: 50% !important;
             display: flex !important;
@@ -2348,7 +2349,7 @@ select {
             padding: 0 !important;
             margin: 0 !important;
         }
-        
+
         /* Immediate styling to prevent flash of oval shape */
         button[aria-label="Full App Display"] {
             aspect-ratio: 1 / 1 !important;
@@ -2363,10 +2364,7 @@ select {
             background-color: transparent !important;
         }
 
-        /* Remove hover scale effect from top bar buttons */
-        .main-globalNav-navLink:hover,
-        .main-globalNav-historyButtons button:hover,
-        .main-actionButtons button:hover,
+        /* Remove hover scale effect from FAD button only */
         button[aria-label="Full App Display"]:hover {
             transform: none !important;
             scale: 1 !important;

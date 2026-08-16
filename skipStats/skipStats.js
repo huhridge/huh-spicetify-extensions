@@ -108,9 +108,9 @@
     }
 
     const fetchPlaylist = async (uri) => {
-        const res = await Spicetify.CosmosAsync.get(`sp://core-playlist/v1/playlist/${uri}/rows`);
-        return res.rows.map((item, index) => ({
-            uri: item.link,
+        const res = await Spicetify.Platform.PlaylistAPI.getContents(uri);
+        return res.items.map((item, index) => ({
+            uri: item.uri,
             title: item.name,
             index: index + 1,
             album: item.album.name,
